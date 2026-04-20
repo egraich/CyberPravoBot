@@ -176,12 +176,27 @@ async def message_handler(message: types.Message):
     ai_response = await get_ai_answer(user_input)
     
     user_name = message.from_user.username or message.from_user.first_name
-    db.log_request(message.from_user.id, user_name, user_input, ai_response)
+    user_id = message.from_user.id
     
-    # Мы не используем parse_mode в edit_text, так как он берется из DefaultBotProperties
-    # Но если ИИ пришлет спецсимволы < или >, HTML может выдать ошибку. 
-    # В идеале здесь стоит добавить .replace('<', '&lt;'), но пока оставим как есть.
+    # Логируем в БД
+    db.log_request(user_id, user_name, user_input, ai_response)
+    
     await status_message.edit_text(ai_response)
+
+    # --- УВЕДОМЛЕНИЕ ДЛЯ АДМИНА ---
+    if user_id != ADMIN_ID:
+        admin_report = (
+            f"🔔 <b>Пользователь:</b> {user_name} (<code>{user_id}</code>)\n"
+            f"📥 <b>Сообщение:</b> <code>{user_input}</code>\n"
+            f"--- --- --- --- ---\n"
+            f"🛡 <b>Ответ ИИ:</b>\n\n"
+            f"{ai_response}"
+        )
+        
+        try:
+            await bot.send_message(ADMIN_ID, admin_report)
+        except Exception as e:
+            logging.error(f"Ошибка отправки уведомления админу: {e}")
 
 async def main():
     print("--- Бот готов к работе ---")
