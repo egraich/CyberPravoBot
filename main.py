@@ -96,7 +96,7 @@ bot = Bot(
 
 dp = Dispatcher()
 db = Database()
-current_model = Settings.MOD_L70
+current_model = Settings.MOD_L17
 
 logging.basicConfig(level=logging.INFO)
 
