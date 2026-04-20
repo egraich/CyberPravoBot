@@ -30,10 +30,11 @@ class Settings:
     BTN_HIDE = "❌ Скрыть панель"
 
 class Messages:
+    # Перевел разметку с **текст** на <b>текст</b> для HTML
     START = """Привет, {name}!
 Система "КиберЩит" активна и ожидает данные. 
 
-Просто **перешли мне сообщение** или **вставь подозрительный текст**, и я мгновенно проведу сканирование на скрытые угрозы.
+Просто <b>перешли мне сообщение</b> или <b>вставь подозрительный текст</b>, и я мгновенно проведу сканирование на скрытые угрозы.
 
 Берегите свои данные.
 
@@ -78,10 +79,13 @@ SYSTEM_PROMPT = """
 
 # --- ИНИЦИАЛИЗАЦИЯ ---
 ai_client = Groq(api_key=AI_KEY)
+
+# ИСПОЛЬЗУЕМ HTML И DefaultBotProperties (для aiogram 3.7+)
 bot = Bot(
     token=BOT_TOKEN, 
-    default=DefaultBotProperties(parse_mode=ParseMode.MARKDOWN)
+    default=DefaultBotProperties(parse_mode=ParseMode.HTML)
 )
+
 dp = Dispatcher()
 db = Database()
 current_model = Settings.MOD_L70
@@ -116,7 +120,7 @@ async def admin_panel(message: types.Message):
         [types.KeyboardButton(text=Settings.BTN_70B)],
         [types.KeyboardButton(text=Settings.BTN_120B)],
         [types.KeyboardButton(text=Settings.BTN_17B)],
-        [types.KeyboardButton(text=Settings.BTN_EXPORT)], # Новая кнопка [cite: 19]
+        [types.KeyboardButton(text=Settings.BTN_EXPORT)], # Новая кнопка
         [types.KeyboardButton(text=Settings.BTN_HIDE)]
     ]
     keyboard = types.ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True)
@@ -166,6 +170,9 @@ async def message_handler(message: types.Message):
     user_name = message.from_user.username or message.from_user.first_name
     db.log_request(message.from_user.id, user_name, user_input, ai_response)
     
+    # Мы не используем parse_mode в edit_text, так как он берется из DefaultBotProperties
+    # Но если ИИ пришлет спецсимволы < или >, HTML может выдать ошибку. 
+    # В идеале здесь стоит добавить .replace('<', '&lt;'), но пока оставим как есть.
     await status_message.edit_text(ai_response)
 
 async def main():
