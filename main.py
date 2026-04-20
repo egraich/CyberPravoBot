@@ -128,7 +128,7 @@ async def admin_panel(message: types.Message):
         [types.KeyboardButton(text=Settings.BTN_70B)],
         [types.KeyboardButton(text=Settings.BTN_120B)],
         [types.KeyboardButton(text=Settings.BTN_17B)],
-        [types.KeyboardButton(text=Settings.BTN_EXPORT)], # Новая кнопка
+        [types.KeyboardButton(text=Settings.BTN_EXPORT)],
         [types.KeyboardButton(text=Settings.BTN_HIDE)]
     ]
     keyboard = types.ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True)
@@ -178,7 +178,6 @@ async def message_handler(message: types.Message):
     user_name = message.from_user.username or message.from_user.first_name
     user_id = message.from_user.id
     
-    # Логируем в БД
     db.log_request(user_id, user_name, user_input, ai_response)
     
     await status_message.edit_text(ai_response)
