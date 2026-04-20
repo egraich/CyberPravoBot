@@ -13,7 +13,7 @@ AI_KEY = os.getenv("AI_KEY")
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 ADMIN_ID = 1700689138
 
-# --- КЛАССЫ КОНФИГУРАЦИИ (ВЕСЬ ТЕКСТ ТУТ) ---
+# --- КЛАССЫ КОНФИГУРАЦИИ---
 class Settings:
     # Технические названия моделей для API
     MOD_L70 = "llama-3.3-70b-versatile"
