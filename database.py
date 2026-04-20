@@ -4,7 +4,7 @@ import os
 from datetime import datetime
 
 class Database:
-    def __init__(self, db_path="data/cyber_shield.db"):
+    def __init__(self, db_path="/data/cyber_shield.db"):
         self.db_path = db_path
         
         # Убеждаемся, что папка data существует
