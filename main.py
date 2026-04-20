@@ -102,7 +102,7 @@ async def set_gpt120b(message: types.Message):
     await message.answer("🧠 Установлена экспертная модель GPT-OSS 120B (Ультра-анализ).")
 
 @dp.message(F.text == "Модель: Llama 17B (Массовая)", F.from_user.id == ADMIN_ID)
-async def set_qwen32b(message: types.Message):
+async def set_llama17b(message: types.Message):
     global current_model
     current_model = "meta-llama/llama-4-scout-17b-16e-instruct"
     await message.answer("🛡 Установлена дисциплинированная модель Llama 4-Scout 17B.")
@@ -111,16 +111,24 @@ async def set_qwen32b(message: types.Message):
 async def hide_panel(message: types.Message):
     await message.answer("Панель скрыта. Бот работает в штатном режиме.", reply_markup=types.ReplyKeyboardRemove())
 
-@dp.message(F.text)
+# Хендлер теперь ловит и текст, и подписи к медиафайлам
+@dp.message(F.text | F.caption)
 async def message_handler(message: types.Message):
+    # Извлекаем текст из сообщения или из подписи под картинкой/файлом
+    user_input = message.text or message.caption
+    
+    # Если текста нет (например, пустая картинка), выходим
+    if not user_input:
+        return
+
     status_message = await message.answer("Выполняю глубокое сканирование...")
-    ai_response = await get_ai_answer(message.text)
+    ai_response = await get_ai_answer(user_input)
     
     # Пытаемся достать username, если его нет — берем имя
     user_name = message.from_user.username or message.from_user.first_name
     
-    # Сохраняем запрос и ответ в базу данных (теперь с именем)
-    db.log_request(message.from_user.id, user_name, message.text, ai_response)
+    # Сохраняем именно проанализированный текст в базу данных
+    db.log_request(message.from_user.id, user_name, user_input, ai_response)
     
     await status_message.edit_text(ai_response)
 
