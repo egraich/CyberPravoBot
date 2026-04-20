@@ -5,6 +5,8 @@ from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command
 from aiogram.types import FSInputFile
 from groq import Groq
+from aiogram.enums import ParseMode
+from aiogram.client.default import DefaultBotProperties
 
 from database import Database
 
@@ -76,7 +78,10 @@ SYSTEM_PROMPT = """
 
 # --- ИНИЦИАЛИЗАЦИЯ ---
 ai_client = Groq(api_key=AI_KEY)
-bot = Bot(token=BOT_TOKEN)
+bot = Bot(
+    token=BOT_TOKEN, 
+    default=DefaultBotProperties(parse_mode=ParseMode.MARKDOWN)
+)
 dp = Dispatcher()
 db = Database()
 current_model = Settings.MOD_L70
