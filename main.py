@@ -1,14 +1,15 @@
 import asyncio
 import os
 import logging
+
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command
 from aiogram.types import FSInputFile
-from groq import Groq
 from aiogram.enums import ParseMode
 from aiogram.client.default import DefaultBotProperties
-from config import Settings, Messages, SYSTEM_PROMPT
+from groq import Groq
 
+from config import Settings, Messages, SYSTEM_PROMPT
 from database import Database
 
 # --- ГЛОБАЛЬНЫЕ НАСТРОЙКИ ---
