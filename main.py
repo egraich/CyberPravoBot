@@ -12,7 +12,7 @@ from groq import Groq
 from config import MESSAGES, SETTINGS, SYSTEM_PROMPT
 from database import Database
 
-# --- НАСТРОЙКИ (Константы пишем капсом) ---
+# --- НАСТРОЙКИ ---
 ADMIN_ID = 1111111111
 AI_KEY = os.getenv("AI_KEY")
 BOT_TOKEN = os.getenv("BOT_TOKEN")
@@ -28,7 +28,6 @@ bot = Bot(
 )
 dp = Dispatcher()
 
-# Состояние модели (можно хранить в обычном словаре, чтобы избежать глобалок)
 states = {"current_model": SETTINGS.MOD_L17}
 
 
