@@ -79,21 +79,21 @@ async def handle_mode_callback(callback: types.CallbackQuery):
     new_mode = callback.data.split("_")[1]
     user_id = callback.from_user.id
     
-    # 1. Сначала обновляем режим в БД
     db.set_user_mode(user_id, new_mode)
     
-    # 2. Пытаемся отредактировать сообщение
+    # Получаем красивое название из словаря
+    pretty_mode = MESSAGES.MODE_NAMES.get(new_mode, "Неизвестный")
+    
     try:
         await callback.message.edit_text(
-            MESSAGES.MODE_CHANGED.format(mode=new_mode.upper()),
+            MESSAGES.MODE_CHANGED.format(mode=pretty_mode),
             reply_markup=get_mode_kb()
         )
     except Exception as e:
-        # Если текст тот же самый, Telegram выдаст ошибку — просто игнорируем её
-        logging.info(f"Edit message skipped: {e}")
+        logging.info(f"Message not modified: {e}")
     
-    # 3. ВАЖНО: Всегда отвечаем на колбэк, чтобы убрать анимацию загрузки на кнопке
     await callback.answer()
+
 # --- ADMIN HANDLERS ---
 @dp.message(Command("admin"), F.from_user.id == ADMIN_ID)
 async def admin_panel(message: types.Message):
@@ -152,9 +152,9 @@ async def message_handler(message: types.Message):
     
     # 1. Get user mode from database
     current_mode = db.get_user_mode(user_id)
-    
+    pretty_mode = MESSAGES.MODE_NAMES.get(current_mode, MESSAGES.MODE_NAMES["general"])
     # 2. Show scanning status with current mode
-    status_msg = await message.answer(f"🔎 [{current_mode.upper()}] {MESSAGES.SCANNING}")
+    status_msg = await message.answer(f"[{pretty_mode}] {MESSAGES.SCANNING}")
     
     # 3. Get AI response
     ai_response = await get_ai_answer(user_input, current_mode)
