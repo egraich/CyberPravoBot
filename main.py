@@ -60,7 +60,7 @@ async def get_ai_answer(user_text: str, mode: str) -> str:
                 {"role": "system", "content": instruction},
                 {"role": "user", "content": user_text}
             ],
-            temperature=0.4,
+            temperature=0.33,
             max_tokens=550
         )
         return completion.choices[0].message.content
