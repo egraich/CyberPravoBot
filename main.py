@@ -34,14 +34,19 @@ states = {"current_model": SETTINGS.MOD_L17}
 
 # --- UI BUILDERS ---
 def get_mode_kb():
-    """Generates inline keyboard for mode selection."""
+    """Генерирует инлайн-клавиатуру на основе словаря MODE_NAMES из конфига."""
     builder = InlineKeyboardBuilder()
-    builder.button(text="🛡 Стандарт", callback_data="setmode_general")
-    builder.button(text="🛒 Куфар (Kufar)", callback_data="setmode_kufar")
-    builder.button(text="📞 Viber / Звонок", callback_data="setmode_viber")
-    builder.adjust(1)
+    
+    # Проходим циклом по всем режимам, которые ты прописал в MESSAGES.MODE_NAMES
+    for code, pretty_name in MESSAGES.MODE_NAMES.items():
+        builder.button(
+            text=pretty_name, 
+            callback_data=f"setmode_{code}"
+        )
+    
+    # Выстраиваем по 1 или 2 кнопки в ряд (как тебе больше нравится)
+    builder.adjust(1) 
     return builder.as_markup()
-
 
 # --- AI LOGIC ---
 async def get_ai_answer(user_text: str, mode: str) -> str:
