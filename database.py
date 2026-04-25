@@ -59,7 +59,7 @@ class Database:
             match = re.search(r'^1\.\s*(\d+)%', first_line)
             return int(match.group(1)) if match else 0
         except:
-            return 0
+            return None
 
     def log_request(self, user_id, username, user_text, bot_verdict, mode):
         """Записываем всё, включая режим, в котором проводился анализ."""
