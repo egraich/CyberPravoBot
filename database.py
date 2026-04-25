@@ -56,8 +56,8 @@ class Database:
     def extract_risk_score(self, bot_text):
         try:
             first_line = bot_text.strip().split('\n')[0]
-            match = re.search(r'^1\.\s*(\d+)%', first_line)
-            return int(match.group(1)) if match else 0
+            match = re.search(r'(\d+)(?=%)', first_line)
+            return int(match.group(1)) if match else None
         except:
             return None
 
