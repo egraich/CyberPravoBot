@@ -7,17 +7,18 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.filters import Command
 from aiogram.types import FSInputFile, ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 from groq import Groq
 
-from config import MESSAGES, SETTINGS, SYSTEM_PROMPT
+from config import MESSAGES, SETTINGS, PROMPTS
 from database import Database
 
-# --- НАСТРОЙКИ ---
+# --- SETTINGS ---
 ADMIN_ID = 1111111111
 AI_KEY = os.getenv("AI_KEY")
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 
-# --- ИНИЦИАЛИЗАЦИЯ ---
+# --- INITIALIZATION ---
 logging.basicConfig(level=logging.INFO)
 
 ai_client = Groq(api_key=AI_KEY)
@@ -31,14 +32,27 @@ dp = Dispatcher()
 states = {"current_model": SETTINGS.MOD_L17}
 
 
-# --- ЛОГИКА ИИ ---
-async def get_ai_answer(user_text: str) -> str:
-    """Запрос к API Groq для анализа текста."""
+# --- UI BUILDERS ---
+def get_mode_kb():
+    """Generates inline keyboard for mode selection."""
+    builder = InlineKeyboardBuilder()
+    builder.button(text="🛡 Стандарт", callback_data="setmode_general")
+    builder.button(text="🛒 Куфар (Kufar)", callback_data="setmode_kufar")
+    builder.button(text="📞 Viber / Звонок", callback_data="setmode_viber")
+    builder.adjust(1)
+    return builder.as_markup()
+
+
+# --- AI LOGIC ---
+async def get_ai_answer(user_text: str, mode: str) -> str:
+    """Request to Groq API using the selected mode prompt."""
+    instruction = PROMPTS.get(mode, PROMPTS["general"])
+    
     try:
         completion = ai_client.chat.completions.create(
             model=states["current_model"], 
             messages=[
-                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "system", "content": instruction},
                 {"role": "user", "content": user_text}
             ],
             temperature=0.3,
@@ -46,16 +60,37 @@ async def get_ai_answer(user_text: str) -> str:
         )
         return completion.choices[0].message.content
     except Exception as e:
-        logging.error(f"Ошибка Groq: {e}")
-        return f"Ошибка системы ИИ: {e}"
+        logging.error(f"Groq API Error: {e}")
+        return f"AI System Error: {e}"
 
 
-# --- ОБРАБОТКА КОМАНД ---
+# --- USER COMMAND HANDLERS ---
 @dp.message(Command("start"))
 async def start_handler(message: types.Message):
-    await message.answer(MESSAGES.START.format(name=message.from_user.first_name))
+    await message.answer(
+        MESSAGES.START.format(name=message.from_user.first_name),
+        reply_markup=get_mode_kb()
+    )
 
 
+@dp.callback_query(F.data.startswith("setmode_"))
+async def handle_mode_callback(callback: types.CallbackQuery):
+    """Handles inline button clicks for mode selection."""
+    new_mode = callback.data.split("_")[1]
+    user_id = callback.from_user.id
+    
+    # Save mode to database
+    db.set_user_mode(user_id, new_mode)
+    
+    # Update message text and keep the keyboard
+    await callback.message.edit_text(
+        MESSAGES.MODE_CHANGED.format(mode=new_mode.upper()),
+        reply_markup=get_mode_kb()
+    )
+    await callback.answer()
+
+
+# --- ADMIN HANDLERS ---
 @dp.message(Command("admin"), F.from_user.id == ADMIN_ID)
 async def admin_panel(message: types.Message):
     kb = [
@@ -72,10 +107,9 @@ async def admin_panel(message: types.Message):
     )
 
 
-# --- АДМИНСКИЕ ХЕНДЛЕРЫ ---
 @dp.message(F.from_user.id == ADMIN_ID, F.text.in_({SETTINGS.BTN_70B, SETTINGS.BTN_120B, SETTINGS.BTN_17B}))
 async def change_model(message: types.Message):
-    """Универсальный хендлер для смены модели."""
+    """Universal handler for model switching."""
     if message.text == SETTINGS.BTN_70B:
         states["current_model"] = SETTINGS.MOD_L70
     elif message.text == SETTINGS.BTN_120B:
@@ -102,26 +136,36 @@ async def export_db_handler(message: types.Message):
         await message.answer(MESSAGES.DB_NOT_FOUND)
 
 
-# --- ГЛАВНЫЙ АНАЛИЗАТОР ---
+# --- MAIN ANALYZER ---
 @dp.message(F.text | F.caption)
 async def message_handler(message: types.Message):
     user_input = message.text or message.caption
     if not user_input:
         return
 
-    status_msg = await message.answer(MESSAGES.SCANNING)
-    ai_response = await get_ai_answer(user_input)
-    
-    user_name = message.from_user.username or message.from_user.first_name
     user_id = message.from_user.id
+    user_name = message.from_user.username or message.from_user.first_name
     
-    db.log_request(user_id, user_name, user_input, ai_response)
+    # 1. Get user mode from database
+    current_mode = db.get_user_mode(user_id)
+    
+    # 2. Show scanning status with current mode
+    status_msg = await message.answer(f"🔎 [{current_mode.upper()}] {MESSAGES.SCANNING}")
+    
+    # 3. Get AI response
+    ai_response = await get_ai_answer(user_input, current_mode)
+    
+    # 4. Log everything to database
+    db.log_request(user_id, user_name, user_input, ai_response, current_mode)
+    
+    # 5. Display result
     await status_msg.edit_text(ai_response)
 
-    # Уведомление админа
+    # 6. Notify admin
     if user_id != ADMIN_ID:
         report = (
             f"🔔 <b>Пользователь:</b> <code>{user_name}</code> (<code>{user_id}</code>)\n"
+            f"⚙️ <b>Режим:</b> {current_mode.upper()}\n"
             f"📥 <b>Сообщение:</b>\n<code>{user_input}</code>\n"
             f"{'—' * 15}\n"
             f"🛡 <b>Ответ ИИ:</b>\n\n{ai_response}"
