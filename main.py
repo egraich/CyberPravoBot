@@ -60,7 +60,7 @@ async def get_ai_answer(user_text: str, mode: str) -> str:
                 {"role": "system", "content": instruction},
                 {"role": "user", "content": user_text}
             ],
-            temperature=0.3,
+            temperature=0.4,
             max_tokens=550
         )
         return completion.choices[0].message.content
@@ -70,7 +70,7 @@ async def get_ai_answer(user_text: str, mode: str) -> str:
 
 
 # --- USER COMMAND HANDLERS ---
-@dp.message(Command("start"))
+@dp.message(Command("start", "st"))
 async def start_handler(message: types.Message):
     await message.answer(
         MESSAGES.START.format(name=message.from_user.first_name),
