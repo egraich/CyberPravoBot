@@ -6,15 +6,12 @@ from datetime import datetime
 class Database:
     def __init__(self, db_path="/data/cyber_shield.db"):
         self.db_path = db_path
-        
-        # Убеждаемся, что папка data существует
         os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
-        
-        self._create_table()
+        self._create_tables()
 
-    def _create_table(self):
+    def _create_tables(self):
         with sqlite3.connect(self.db_path) as conn:
-            # Добавлена колонка username [cite: 2, 3]
+            # ТАБЛИЦА 1: Логи (История всех проверок)
             conn.execute('''
                 CREATE TABLE IF NOT EXISTS logs (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -23,24 +20,52 @@ class Database:
                     user_text TEXT,
                     bot_verdict TEXT,
                     risk_score INTEGER,
+                    mode TEXT,
                     timestamp DATETIME
                 )
             ''')
+            
+            # ТАБЛИЦА 2: Настройки (Текущий режим каждого юзера)
+            # user_id тут UNIQUE, чтобы настройки не дублировались
+            conn.execute('''
+                CREATE TABLE IF NOT EXISTS user_settings (
+                    user_id INTEGER PRIMARY KEY,
+                    mode TEXT DEFAULT 'general'
+                )
+            ''')
+
+    # --- РАБОТА С НАСТРОЙКАМИ ЮЗЕРА ---
+
+    def set_user_mode(self, user_id, mode):
+        """Сохраняем или обновляем режим юзера."""
+        with sqlite3.connect(self.db_path) as conn:
+            conn.execute('''
+                INSERT INTO user_settings (user_id, mode) 
+                VALUES (?, ?) 
+                ON CONFLICT(user_id) DO UPDATE SET mode=excluded.mode
+            ''', (user_id, mode))
+
+    def get_user_mode(self, user_id):
+        """Достаем режим. Если юзера нет — выдаем 'general'."""
+        with sqlite3.connect(self.db_path) as conn:
+            res = conn.execute("SELECT mode FROM user_settings WHERE user_id = ?", (user_id,)).fetchone()
+            return res[0] if res else "general"
+
+    # --- ЛОГИРОВАНИЕ ---
 
     def extract_risk_score(self, bot_text):
         try:
-            # Парсим число из первой строки ответа ИИ [cite: 4, 5]
             first_line = bot_text.strip().split('\n')[0]
             match = re.search(r'^1\.\s*(\d+)%', first_line)
-            return int(match.group(1)) if match else None
-        except Exception:
-            return None
+            return int(match.group(1)) if match else 0
+        except:
+            return 0
 
-    def log_request(self, user_id, username, user_text, bot_verdict):
+    def log_request(self, user_id, username, user_text, bot_verdict, mode):
+        """Записываем всё, включая режим, в котором проводился анализ."""
         score = self.extract_risk_score(bot_verdict)
         with sqlite3.connect(self.db_path) as conn:
-            # Теперь записываем 6 колонок вместо 5 [cite: 6]
             conn.execute('''
-                INSERT INTO logs (user_id, username, user_text, bot_verdict, risk_score, timestamp)
-                VALUES (?, ?, ?, ?, ?, ?)
-            ''', (user_id, username, user_text, bot_verdict, score, datetime.now()))
+                INSERT INTO logs (user_id, username, user_text, bot_verdict, risk_score, mode, timestamp)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            ''', (user_id, username, user_text, bot_verdict, score, mode, datetime.now()))
