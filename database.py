@@ -36,7 +36,7 @@ class Database:
 
     # --- РАБОТА С НАСТРОЙКАМИ ЮЗЕРА ---
 
-    def set_user_mode(self, user_id, mode):
+    def set_user_mode(self, user_id, mode) -> None:
         """Сохраняем или обновляем режим юзера."""
         with sqlite3.connect(self.db_path) as conn:
             conn.execute('''
@@ -45,7 +45,7 @@ class Database:
                 ON CONFLICT(user_id) DO UPDATE SET mode=excluded.mode
             ''', (user_id, mode))
 
-    def get_user_mode(self, user_id):
+    def get_user_mode(self, user_id) -> str:
         """Достаем режим. Если юзера нет — выдаем 'general'."""
         with sqlite3.connect(self.db_path) as conn:
             res = conn.execute("SELECT mode FROM user_settings WHERE user_id = ?", (user_id,)).fetchone()
@@ -58,7 +58,7 @@ class Database:
             first_line = bot_text.strip().split('\n')[0]
             match = re.search(r'(\d+)(?=%)', first_line)
             return int(match.group(1)) if match else None
-        except:
+        except Exception:
             return None
 
     def log_request(self, user_id, username, user_text, bot_verdict, mode):

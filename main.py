@@ -168,7 +168,7 @@ async def message_handler(message: types.Message):
     db.log_request(user_id, user_name, user_input, ai_response, current_mode)
     
     # 5. Display result
-    await status_msg.edit_text(ai_response)
+    await status_msg.edit_text(ai_response, parse_mode = None)
 
     # 6. Notify admin
     if user_id != ADMIN_ID:
