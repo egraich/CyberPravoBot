@@ -79,17 +79,21 @@ async def handle_mode_callback(callback: types.CallbackQuery):
     new_mode = callback.data.split("_")[1]
     user_id = callback.from_user.id
     
-    # Save mode to database
+    # 1. Сначала обновляем режим в БД
     db.set_user_mode(user_id, new_mode)
     
-    # Update message text and keep the keyboard
-    await callback.message.edit_text(
-        MESSAGES.MODE_CHANGED.format(mode=new_mode.upper()),
-        reply_markup=get_mode_kb()
-    )
+    # 2. Пытаемся отредактировать сообщение
+    try:
+        await callback.message.edit_text(
+            MESSAGES.MODE_CHANGED.format(mode=new_mode.upper()),
+            reply_markup=get_mode_kb()
+        )
+    except Exception as e:
+        # Если текст тот же самый, Telegram выдаст ошибку — просто игнорируем её
+        logging.info(f"Edit message skipped: {e}")
+    
+    # 3. ВАЖНО: Всегда отвечаем на колбэк, чтобы убрать анимацию загрузки на кнопке
     await callback.answer()
-
-
 # --- ADMIN HANDLERS ---
 @dp.message(Command("admin"), F.from_user.id == ADMIN_ID)
 async def admin_panel(message: types.Message):
