@@ -25,7 +25,7 @@ class Database:
                 )
             ''')
             
-            # ТАБЛИЦА 2: Настройки (Текущий режим каждого юзера)
+            # ТАБЛИЦА 2: Настройки
             # user_id тут UNIQUE, чтобы настройки не дублировались
             conn.execute('''
                 CREATE TABLE IF NOT EXISTS user_settings (
