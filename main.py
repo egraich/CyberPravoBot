@@ -55,7 +55,7 @@ def scan_url_virustotal(url: str) -> str:
     Использует стандартный urllib, чтобы не раздувать зависимости.
     """
     if not VT_API_KEY:
-        return "<i>⚠️ Ошибка: Ключ VirusTotal не найден в системе.</i>\n"
+        return "<em>⚠️ Ошибка: Ключ VirusTotal не найден в системе.</em>\n"
     
     # API VT v3 требует ID в формате Base64 без символов '='
     url_id = base64.urlsafe_b64encode(url.encode()).decode().strip("=")
@@ -65,7 +65,7 @@ def scan_url_virustotal(url: str) -> str:
     
     try:
         # Ставим таймаут 5 сек, чтобы не вешать бота при лагах VT
-        with urllib.request.urlopen(req, timeout=5) as response:
+        with urllib.request.urlopen(req, timeout=2) as response:
             data = json.loads(response.read().decode())
             stats = data['data']['attributes']['last_analysis_stats']
             
