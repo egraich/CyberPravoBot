@@ -206,7 +206,7 @@ async def message_handler(message: types.Message):
         return
 
     # Защита от переполнения памяти сервера (обрезаем гигантские спам-сообщения)
-    user_input = raw_text[:1500] 
+    user_input = raw_text[:4000] 
 
     user_id = message.from_user.id
     user_name = message.from_user.username or message.from_user.first_name
