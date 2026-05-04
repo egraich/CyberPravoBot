@@ -48,46 +48,35 @@ def extract_url(text: str) -> str:
     return match.group(1) if match else None
 
 def scan_url_virustotal(url: str) -> str:
-    """
-    Проверяет ссылку через VirusTotal API v3.
-    Использует стандартный urllib, чтобы не раздувать зависимости сервера.
-    """
     if not VT_API_KEY:
         return MESSAGES.VT_NO_KEY
     
-    # API VT v3 требует ID в формате Base64 без символов '='
     url_id = base64.urlsafe_b64encode(url.encode()).decode().strip("=")
     api_url = f"https://www.virustotal.com/api/v3/urls/{url_id}"
     
     req = urllib.request.Request(
         api_url, 
-        headers={
-            "x-apikey": VT_API_KEY,
-            "Accept": "application/json"
-        }
+        headers={"x-apikey": VT_API_KEY, "Accept": "application/json"}
     )
     
     try:
-        # Таймаут 5 сек для защиты от зависаний API
         with urllib.request.urlopen(req, timeout=2) as response:
             data = json.loads(response.read().decode())
             stats = data['data']['attributes']['last_analysis_stats']
-            
-            malicious = stats.get('malicious', 0)
-            suspicious = stats.get('suspicious', 0)
+            malicious = stats.get('malicious', 0) + stats.get('suspicious', 0)
             total = sum(stats.values())
             
-            if malicious > 0 or suspicious > 0:
-                return MESSAGES.VT_THREAT.format(malicious=malicious+suspicious, total=total)
-            else:
-                return MESSAGES.VT_CLEAN.format(total=total)
+            if malicious > 0:
+                return MESSAGES.VT_THREAT.format(malicious=malicious, total=total)
+            return MESSAGES.VT_CLEAN.format(total=total)
                 
     except urllib.error.HTTPError as e:
         if e.code == 404:
             return MESSAGES.VT_NOT_FOUND
+        if e.code == 429:
+            return "⚠️ <b>VirusTotal:</b> Лимит запросов (4/мин) исчерпан. Попробуйте позже."
         return MESSAGES.VT_ERROR.format(code=e.code)
-    except Exception as e:
-        logging.error(f"VT Error: {e}")
+    except Exception:
         return ""
 
 # --- ЛОГИКА КЛАВИАТУР ---
@@ -233,17 +222,20 @@ async def message_handler(message: types.Message):
         await status_msg.edit_text(ai_response, parse_mode=None)
         db.log_request(user_id, user_name, user_input, ai_response, current_mode)
         
-    # СЦЕНАРИЙ 3: В сообщении есть И ССЫЛКА, И ТЕКСТ (пересланное письмо фишера)
+    # СЦЕНАРИЙ 3: В сообщении есть И ССЫЛКА, И ТЕКСТ
     if found_url and len(text_without_url) >= 10:
-        # Пробиваем ссылку
         vt_result = scan_url_virustotal(found_url)
-        
-        # Передаем текст + инфу от антивируса в ИИ
         ai_response = await get_ai_answer(user_input, current_mode, vt_data=vt_result)
         
-        # Плашка VT идет в самом конце, чтобы парсер % в БД не ломался о первую строку
         final_response = f"{ai_response}\n\n{vt_result}"
-        await status_msg.edit_text(final_response, parse_mode=None)
+        
+        try:
+            # Пытаемся отправить с жирным текстом
+            await status_msg.edit_text(final_response, parse_mode=ParseMode.HTML)
+        except Exception:
+            # Если ИИ прислал < или > и сломал HTML, отправляем как есть
+            await status_msg.edit_text(final_response, parse_mode=None)
+            
         db.log_request(user_id, user_name, user_input, final_response, current_mode)
 
     # --- Уведомление администратора ---
