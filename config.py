@@ -45,7 +45,7 @@ class Messages:
     # --- Тексты для VirusTotal ---
     VT_NO_KEY = "<em>⚠️ Ошибка: Ключ VirusTotal не найден в системе.</em>\n"
     VT_THREAT = "🚨 <b>VirusTotal: {malicious}/{total}</b> антивирусов нашли угрозу!"
-    VT_CLEAN = "✅ <b>VirusTotal:</b> В базах чисто (0/{total})."
+    VT_CLEAN = "✅ <b>VirusTotal:</b> Ссылка Безопасна (0/{total})."
     VT_NOT_FOUND = "🔍 <b>VirusTotal:</b> Этой ссылки еще нет в базе. Будьте осторожны."
     VT_ERROR = "⚠️ <b>VirusTotal:</b> Ошибка сервера ({code})"
     VT_SYSTEM_PROMPT = "Внимание! Встроенный модуль VirusTotal проверил ссылку из сообщения и сообщает: {vt_data}. Обязательно учти эту информацию при вынесении вердикта и составлении прогноза рисков."
