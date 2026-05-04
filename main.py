@@ -15,7 +15,7 @@ from aiogram.types import FSInputFile, ReplyKeyboardMarkup, KeyboardButton, Repl
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from groq import Groq
 
-# Твои локальные модули
+# Подключение локальных модулей
 from config import MESSAGES, SETTINGS, PROMPTS
 from database import Database
 
@@ -23,7 +23,7 @@ from database import Database
 ADMIN_ID = 1111111111
 AI_KEY = os.getenv("AI_KEY")
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-VT_API_KEY = os.getenv("VT_API_KEY")  # Ключ от VirusTotal
+VT_API_KEY = os.getenv("VT_API_KEY")
 
 # --- ИНИЦИАЛИЗАЦИЯ ОБЪЕКТОВ ---
 logging.basicConfig(level=logging.INFO)
@@ -39,12 +39,10 @@ dp = Dispatcher()
 # Храним текущую модель в памяти (для быстрой смены админом)
 states = {"current_model": SETTINGS.MOD_L17}
 
-# --- ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ (УТИЛИТЫ) ---
+# --- ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ---
 
 def extract_url(text: str) -> str:
-    """
-    Ищет первую ссылку в тексте сообщения с помощью регулярного выражения.
-    """
+    """Ищет первую ссылку в тексте сообщения с помощью регулярного выражения."""
     url_pattern = re.compile(r'(https?://[^\s]+)')
     match = url_pattern.search(text)
     return match.group(1) if match else None
@@ -52,19 +50,25 @@ def extract_url(text: str) -> str:
 def scan_url_virustotal(url: str) -> str:
     """
     Проверяет ссылку через VirusTotal API v3.
-    Использует стандартный urllib, чтобы не раздувать зависимости.
+    Использует стандартный urllib, чтобы не раздувать зависимости сервера.
     """
     if not VT_API_KEY:
-        return "<em>⚠️ Ошибка: Ключ VirusTotal не найден в системе.</em>\n"
+        return MESSAGES.VT_NO_KEY
     
     # API VT v3 требует ID в формате Base64 без символов '='
     url_id = base64.urlsafe_b64encode(url.encode()).decode().strip("=")
     api_url = f"https://www.virustotal.com/api/v3/urls/{url_id}"
     
-    req = urllib.request.Request(api_url, headers={"x-apikey": VT_API_KEY})
+    req = urllib.request.Request(
+        api_url, 
+        headers={
+            "x-apikey": VT_API_KEY,
+            "Accept": "application/json"
+        }
+    )
     
     try:
-        # Ставим таймаут 5 сек, чтобы не вешать бота при лагах VT
+        # Таймаут 5 сек для защиты от зависаний API
         with urllib.request.urlopen(req, timeout=2) as response:
             data = json.loads(response.read().decode())
             stats = data['data']['attributes']['last_analysis_stats']
@@ -74,14 +78,14 @@ def scan_url_virustotal(url: str) -> str:
             total = sum(stats.values())
             
             if malicious > 0 or suspicious > 0:
-                return f"🚨 <b>VirusTotal: {malicious+suspicious}/{total}</b> антивирусов нашли угрозу!\n\n"
+                return MESSAGES.VT_THREAT.format(malicious=malicious+suspicious, total=total)
             else:
-                return f"✅ <b>VirusTotal:</b> В базах чисто (0/{total}).\n\n"
+                return MESSAGES.VT_CLEAN.format(total=total)
                 
     except urllib.error.HTTPError as e:
         if e.code == 404:
-            return "🔍 <b>VirusTotal:</b> Этой ссылки еще нет в базе. Будьте осторожны.\n\n"
-        return f"⚠️ <b>VirusTotal:</b> Ошибка сервера ({e.code})\n\n"
+            return MESSAGES.VT_NOT_FOUND
+        return MESSAGES.VT_ERROR.format(code=e.code)
     except Exception as e:
         logging.error(f"VT Error: {e}")
         return ""
@@ -89,9 +93,7 @@ def scan_url_virustotal(url: str) -> str:
 # --- ЛОГИКА КЛАВИАТУР ---
 
 def get_mode_kb():
-    """
-    Динамически собирает инлайн-кнопки режимов из MESSAGES.MODE_NAMES.
-    """
+    """Динамически собирает инлайн-кнопки режимов из config.py."""
     builder = InlineKeyboardBuilder()
     for code, pretty_name in MESSAGES.MODE_NAMES.items():
         builder.button(text=pretty_name, callback_data=f"setmode_{code}")
@@ -100,20 +102,29 @@ def get_mode_kb():
 
 # --- ВЗАИМОДЕЙСТВИЕ С ИИ ---
 
-async def get_ai_answer(user_text: str, mode: str) -> str:
+async def get_ai_answer(user_text: str, mode: str, vt_data: str = None) -> str:
     """
     Отправляет запрос в Groq (Llama) с учетом выбранного режима.
+    Если есть результаты VT (vt_data), передает их ИИ как системную директиву.
     """
     instruction = PROMPTS.get(mode, PROMPTS["general"])
+    
+    # Формируем базовый контекст
+    messages = [{"role": "system", "content": instruction}]
+    
+    # Инъекция данных VirusTotal для ИИ (если ссылка была в сообщении)
+    if vt_data:
+        vt_system_msg = MESSAGES.VT_SYSTEM_PROMPT.format(vt_data=vt_data)
+        messages.append({"role": "system", "content": vt_system_msg})
+        
+    messages.append({"role": "user", "content": user_text})
+    
     try:
         completion = ai_client.chat.completions.create(
             model=states["current_model"], 
-            messages=[
-                {"role": "system", "content": instruction},
-                {"role": "user", "content": user_text}
-            ],
-            temperature=0.33, # Низкая температура для точности вердикта
-            max_tokens=600   # Лимит на длину ответа
+            messages=messages,
+            temperature=0.33,
+            max_tokens=600
         )
         return completion.choices[0].message.content
     except Exception as e:
@@ -129,7 +140,7 @@ async def start_handler(message: types.Message):
 
 @dp.callback_query(F.data.startswith("setmode_"))
 async def handle_mode_callback(callback: types.CallbackQuery):
-    """Смена режима анализа по нажатию на кнопку."""
+    """Смена режима анализа по нажатию на инлайн-кнопку."""
     new_mode = callback.data.split("_")[1]
     db.set_user_mode(callback.from_user.id, new_mode)
     
@@ -141,7 +152,7 @@ async def handle_mode_callback(callback: types.CallbackQuery):
             reply_markup=get_mode_kb()
         )
     except Exception:
-        pass # Игнорим ошибку, если сообщение не изменилось
+        pass
     await callback.answer()
 
 # --- ПАНЕЛЬ АДМИНИСТРАТОРА ---
@@ -162,60 +173,99 @@ async def admin_panel(message: types.Message):
         reply_markup=keyboard
     )
 
+@dp.message(F.from_user.id == ADMIN_ID, F.text.in_({SETTINGS.BTN_70B, SETTINGS.BTN_120B, SETTINGS.BTN_17B}))
+async def change_model(message: types.Message):
+    if message.text == SETTINGS.BTN_70B:
+        states["current_model"] = SETTINGS.MOD_L70
+    elif message.text == SETTINGS.BTN_120B:
+        states["current_model"] = SETTINGS.MOD_G120
+    else:
+        states["current_model"] = SETTINGS.MOD_L17
+    await message.answer(f"✅ Установлена модель: {message.text}")
+
+@dp.message(F.text == SETTINGS.BTN_HIDE, F.from_user.id == ADMIN_ID)
+async def hide_panel(message: types.Message):
+    await message.answer(MESSAGES.ADMIN_HIDE, reply_markup=ReplyKeyboardRemove())
+
+@dp.message(F.text == SETTINGS.BTN_EXPORT, F.from_user.id == ADMIN_ID)
+async def export_db_handler(message: types.Message):
+    if os.path.exists(db.db_path):
+        await message.answer_document(FSInputFile(db.db_path), caption=MESSAGES.DB_CAPTION)
+    else:
+        await message.answer(MESSAGES.DB_NOT_FOUND)
+
 # --- ГЛАВНЫЙ АНАЛИЗАТОР ---
 
 @dp.message(F.text | F.caption)
 async def message_handler(message: types.Message):
     """
-    Основная логика: проверка на ссылки -> VT -> AI анализ -> логирование.
+    Основная логика распределения нагрузки (Ссылка / Текст / Ссылка+Текст).
     """
-    user_input = message.text or message.caption
-    if not user_input:
+    raw_text = message.text or message.caption
+    if not raw_text:
         return
+
+    # Защита от переполнения памяти сервера (обрезаем гигантские спам-сообщения)
+    user_input = raw_text[:1500] 
+
     user_id = message.from_user.id
     user_name = message.from_user.username or message.from_user.first_name
     
-    # Достаем текущий режим юзера
     current_mode = db.get_user_mode(user_id)
     pretty_mode = MESSAGES.MODE_NAMES.get(current_mode, "Стандарт")
     
-    # Показываем статус сканирования
     status_msg = await message.answer(f"[{pretty_mode}] {MESSAGES.SCANNING}")
     
-    # 1. Поиск и проверка ссылки через VirusTotal
     found_url = extract_url(user_input)
-    vt_part = ""
-    if found_url:
-        vt_part = scan_url_virustotal(found_url)
+    text_without_url = user_input.replace(found_url, '').strip() if found_url else user_input
     
-    # 2. Получаем ИИ-вердикт
-    ai_part = await get_ai_answer(user_input, current_mode)
-    
-    # 3. Сохраняем в историю
-    db.log_request(user_id, user_name, user_input, ai_part, current_mode)
-    
-    # 4. Отправляем финальный результат (VT + AI)
-    # parse_mode=None т.к. ИИ может выдать символы, которые сломают HTML
-    await status_msg.edit_text(f"{vt_part}{ai_part}", parse_mode=None)
+    # СЦЕНАРИЙ 1: В сообщении ТОЛЬКО ссылка (или текста меньше 10 символов)
+    if found_url and len(text_without_url) < 10:
+        vt_result = scan_url_virustotal(found_url)
+        await status_msg.edit_text(vt_result, parse_mode=ParseMode.HTML)
+        db.log_request(user_id, user_name, user_input, vt_result, current_mode)
+        return
 
-    # 5. Уведомление админа о действии юзера
+    # СЦЕНАРИЙ 2: В сообщении НЕТ ссылок (только текст)
+    if not found_url:
+        ai_response = await get_ai_answer(user_input, current_mode)
+        # HTML не используем, чтобы Llama случайно не сломала разметку
+        await status_msg.edit_text(ai_response, parse_mode=None)
+        db.log_request(user_id, user_name, user_input, ai_response, current_mode)
+        
+    # СЦЕНАРИЙ 3: В сообщении есть И ССЫЛКА, И ТЕКСТ (пересланное письмо фишера)
+    if found_url and len(text_without_url) >= 10:
+        # Пробиваем ссылку
+        vt_result = scan_url_virustotal(found_url)
+        
+        # Передаем текст + инфу от антивируса в ИИ
+        ai_response = await get_ai_answer(user_input, current_mode, vt_data=vt_result)
+        
+        # Плашка VT идет в самом конце, чтобы парсер % в БД не ломался о первую строку
+        final_response = f"{ai_response}\n\n{vt_result}"
+        await status_msg.edit_text(final_response, parse_mode=None)
+        db.log_request(user_id, user_name, user_input, final_response, current_mode)
+
+    # --- Уведомление администратора ---
     if user_id != ADMIN_ID:
-        report = (
-            f"🔔 Юзер: {user_name}\n"
-            f"⚙️ Режим: {current_mode}\n"
-            f"📥 Текст: {user_input[:200]}..."
+        report = MESSAGES.ADMIN_REPORT.format(
+            user_name=user_name,
+            mode=current_mode,
+            has_url='Да' if found_url else 'Нет',
+            text=user_input[:200],
+            response=ai_response if not found_url else final_response[:500] # Защита длины ответа
         )
         try:
-            await bot.send_message(ADMIN_ID, report)
-        except Exception:
-            pass
+            await bot.send_message(ADMIN_ID, report, parse_mode=ParseMode.HTML)
+        except Exception as e:
+            logging.error(f"Ошибка отправки репорта: {e}")
 
 async def main():
-    logging.info("--- Бот запущен и готов к защите ---")
+    logging.info("--- Система КиберЩит запущена ---")
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
-        logging.info("Бот остановлен")
+        logging.info("Система остановлена")
