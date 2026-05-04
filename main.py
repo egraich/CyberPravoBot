@@ -73,7 +73,7 @@ async def get_ai_answer(user_text: str, mode: str) -> str:
 @dp.message(Command("start", "st"))
 async def start_handler(message: types.Message):
     await message.answer(
-        MESSAGES.START.format(name=message.from_user.first_name),
+        MESSAGES.START,
         reply_markup=get_mode_kb()
     )
 
