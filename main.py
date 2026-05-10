@@ -141,7 +141,8 @@ async def mode_callback_handler(callback: types.CallbackQuery):
     db.set_user_mode(callback.from_user.id, new_mode)
     
     # Текст, который мы хотим вывести
-    new_text = f"✅ Режим анализа изменен на: <b>{new_mode.upper()}</b>\n\nПришлите подозрительный текст или перешлите сообщение."
+    # Текст без лишних смайликов в начале, используем формат из конфига или задаем вручную
+    new_text = f"Режим анализа изменен на: <b>{new_mode.upper()}</b>\n\nПришлите подозрительный текст или перешлите сообщение."
     
     # FIX: Если в сообщении есть фото, используем edit_caption, иначе edit_text
     try:
