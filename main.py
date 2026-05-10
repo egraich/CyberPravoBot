@@ -137,14 +137,14 @@ async def start_handler(message: types.Message):
 async def mode_callback_handler(callback: types.CallbackQuery):
     """Изменение режима через кнопки под сообщением."""
     await callback.answer()
-    new_mode = callback.data.split("_")[1]
-    db.set_user_mode(callback.from_user.id, new_mode)
+    new_mode_code = callback.data.split("_")[1]
+    db.set_user_mode(callback.from_user.id, new_mode_code)
     
-    # Текст, который мы хотим вывести
-    # Текст без лишних смайликов в начале, используем формат из конфига или задаем вручную
-    new_text = f"Режим анализа изменен на: <b>{new_mode.upper()}</b>\n\nПришлите подозрительный текст или перешлите сообщение."
+    # Достаем красивое название со смайликом из твоего конфига
+    pretty_name = MESSAGES.MODE_NAMES.get(new_mode_code, new_mode_code.upper())
     
-    # FIX: Если в сообщении есть фото, используем edit_caption, иначе edit_text
+    new_text = f"Режим анализа изменен на: <b>{pretty_name}</b>\n\nПришлите подозрительный текст или перешлите сообщение."
+    
     try:
         if callback.message.photo:
             await callback.message.edit_caption(
@@ -157,7 +157,7 @@ async def mode_callback_handler(callback: types.CallbackQuery):
                 reply_markup=get_mode_kb()
             )
     except Exception as e:
-        logging.error(f"Ошибка редактирования: {e}")
+        logging.error(f"Edit error: {e}")
 
 # --- ПАНЕЛЬ АДМИНИСТРАТОРА ---
 
