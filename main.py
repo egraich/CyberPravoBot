@@ -85,7 +85,7 @@ def get_mode_kb():
     """Динамически собирает инлайн-кнопки режимов из config.py."""
     builder = InlineKeyboardBuilder()
     for code, pretty_name in MESSAGES.MODE_NAMES.items():
-        builder.button(text=pretty_name, callback_data=f"setmode_{code}")
+        builder.button(text=pretty_name, callback_data=f"mode_{code}")
     builder.adjust(1) 
     return builder.as_markup()
 
@@ -136,25 +136,27 @@ async def start_handler(message: types.Message):
 @dp.callback_query(F.data.startswith("mode_"))
 async def mode_callback_handler(callback: types.CallbackQuery):
     """Изменение режима через кнопки под сообщением."""
+    await callback.answer()
     new_mode = callback.data.split("_")[1]
     db.set_user_mode(callback.from_user.id, new_mode)
     
-    await callback.answer(f"Режим изменен на: {new_mode.upper()}")
-    
     # Текст, который мы хотим вывести
-    new_text = f"Режим анализа изменен на: <b>{new_mode.upper()}</b>\n\nПришлите подозрительный текст или перешлите сообщение."
+    new_text = f"✅ Режим анализа изменен на: <b>{new_mode.upper()}</b>\n\nПришлите подозрительный текст или перешлите сообщение."
     
     # FIX: Если в сообщении есть фото, используем edit_caption, иначе edit_text
-    if callback.message.photo:
-        await callback.message.edit_caption(
-            caption=new_text,
-            reply_markup=get_mode_kb()
-        )
-    else:
-        await callback.message.edit_text(
-            text=new_text,
-            reply_markup=get_mode_kb()
-        )
+    try:
+        if callback.message.photo:
+            await callback.message.edit_caption(
+                caption=new_text,
+                reply_markup=get_mode_kb()
+            )
+        else:
+            await callback.message.edit_text(
+                text=new_text,
+                reply_markup=get_mode_kb()
+            )
+    except Exception as e:
+        logging.error(f"Ошибка редактирования: {e}")
 
 # --- ПАНЕЛЬ АДМИНИСТРАТОРА ---
 
