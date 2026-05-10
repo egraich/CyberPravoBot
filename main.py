@@ -215,6 +215,9 @@ async def export_db_handler(message: types.Message):
 
 @dp.message(F.text | F.caption)
 async def message_handler(message: types.Message):
+    """
+    Основная логика распределения нагрузки (Ссылка / Текст / Ссылка+Текст).
+    """
     raw_text = message.text or message.caption
     if not raw_text:
         return
@@ -228,34 +231,50 @@ async def message_handler(message: types.Message):
     
     status_msg = await message.answer(f"[{pretty_mode}] {MESSAGES.SCANNING}")
     
-    found_url = extract_url(user_input)
+    # Пытаемся достать ссылку не только регуляркой, но и через сущности Telegram
+    found_url = None
+    if message.entities:
+        for entity in message.entities:
+            if entity.type == "url":
+                found_url = user_input[entity.offset:entity.offset+entity.length]
+                break
+            elif entity.type == "text_link":
+                found_url = entity.url
+                break
+    
+    if not found_url:
+        found_url = extract_url(user_input)
+
     text_without_url = user_input.replace(found_url, '').strip() if found_url else user_input
     
-    # СЦЕНАРИЙ 1: ТОЛЬКО ссылка
-    if found_url and len(text_without_url) < 10:
+    # --- ЛОГИКА ВЫЗОВА VT И ИИ ---
+    vt_result = None
+    if found_url:
+        logging.info(f"DEBUG: Ссылка найдена: {found_url}. Запускаю VT...")
         vt_result = scan_url_virustotal(found_url)
-        await status_msg.edit_text(vt_result, parse_mode=ParseMode.HTML)
-        db.log_request(user_id, user_name, user_input, vt_result, current_mode)
-        return
+    else:
+        logging.info("DEBUG: Ссылка НЕ найдена в сообщении.")
 
-    # СЦЕНАРИЙ 2: ТОЛЬКО текст
-    if not found_url:
-        ai_response = await get_ai_answer(user_input, current_mode)
-        await status_msg.edit_text(ai_response, parse_mode=None)
-        db.log_request(user_id, user_name, user_input, ai_response, current_mode)
-        
-    # СЦЕНАРИЙ 3: И ССЫЛКА, И ТЕКСТ
-    if found_url and len(text_without_url) >= 10:
-        vt_result = scan_url_virustotal(found_url)
+    # Решаем, какой ответ давать
+    if found_url and len(text_without_url) < 10:
+        # СЦЕНАРИЙ 1: ТОЛЬКО ссылка
+        final_response = vt_result
+    elif not found_url:
+        # СЦЕНАРИЙ 2: ТОЛЬКО текст
+        final_response = await get_ai_answer(user_input, current_mode)
+    else:
+        # СЦЕНАРИЙ 3: И ССЫЛКА, И ТЕКСТ
         ai_response = await get_ai_answer(user_input, current_mode, vt_data=vt_result)
         final_response = f"{ai_response}\n\n{vt_result}"
-        
-        try:
-            await status_msg.edit_text(final_response, parse_mode=ParseMode.HTML)
-        except Exception:
-            await status_msg.edit_text(final_response, parse_mode=None)
+
+    # Отправка результата
+    try:
+        await status_msg.edit_text(final_response, parse_mode=ParseMode.HTML)
+    except Exception as e:
+        logging.error(f"HTML Error: {e}")
+        await status_msg.edit_text(final_response, parse_mode=None)
             
-        db.log_request(user_id, user_name, user_input, final_response, current_mode)
+    db.log_request(user_id, user_name, user_input, final_response, current_mode)
 
     # --- Уведомление администратора ---
     if user_id != ADMIN_ID:
@@ -264,12 +283,12 @@ async def message_handler(message: types.Message):
             mode=current_mode,
             has_url='Да' if found_url else 'Нет',
             text=user_input,
-            response=ai_response if not found_url else final_response
+            response=final_response
         )
         try:
             await bot.send_message(ADMIN_ID, report, parse_mode=ParseMode.HTML)
         except Exception as e:
-            logging.error(f"Admin report error: {e}")
+            logging.error(f"Ошибка отправки репорта: {e}")
 
 async def main():
     logging.info("--- Система КиберЩит запущена ---")
