@@ -124,8 +124,14 @@ async def get_ai_answer(user_text: str, mode: str, vt_data: str = None) -> str:
 
 @dp.message(Command("start", "st"))
 async def start_handler(message: types.Message):
-    """Приветствие и выдача меню выбора режимов."""
-    await message.answer(MESSAGES.START, reply_markup=get_mode_kb())
+    """Приветствие с картинкой и выдача меню выбора режимов."""
+    START_PHOTO_ID = "https://a1.by/medias/sys_master/images/h5a/hf5/9490363351070.jpg" 
+    
+    await message.answer_photo(
+        photo=START_PHOTO_ID,
+        caption=MESSAGES.START, 
+        reply_markup=get_mode_kb()
+    )
 
 @dp.callback_query(F.data.startswith("setmode_"))
 async def handle_mode_callback(callback: types.CallbackQuery):
