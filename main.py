@@ -121,6 +121,11 @@ async def get_ai_answer(user_text: str, mode: str, vt_data: str = None) -> str:
         return f"Ошибка ИИ-анализа: {e}"
 
 # --- ОБРАБОТЧИКИ КОМАНД ---
+@dp.message(F.photo)
+async def get_photo_id(message: types.Message):
+    # Берем самое последнее фото (оно всегда самое большое по качеству)
+    photo_id = message.photo[-1].file_id
+    await message.answer(f"Твой FILE_ID:\n<code>{photo_id}</code>")
 
 @dp.message(Command("start", "st"))
 async def start_handler(message: types.Message):
