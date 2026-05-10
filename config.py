@@ -50,7 +50,7 @@ class Messages:
 
     # --- Тексты для уведомлений администратора ---
     ADMIN_REPORT = (
-        "🔔 <b>Пользователь:</b> {user_name}\n"
+        "🔔 <b>Пользователь:</b> <code>{user_name}</code>\n"
         "⚙️ <b>Режим:</b> {mode}\n"
         "🔗 <b>URL найден:</b> {has_url}\n"
         "📥 <b>Сообщение:</b>\n<code>{text}</code>\n"
