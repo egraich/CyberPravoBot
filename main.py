@@ -49,35 +49,54 @@ def extract_url(text: str) -> str:
 
 def scan_url_virustotal(url: str) -> str:
     if not VT_API_KEY:
+        logging.error("VT: API Key is missing in environment variables!")
         return MESSAGES.VT_NO_KEY
     
-    url_id = base64.urlsafe_b64encode(url.encode()).decode().strip("=")
+    # VirusTotal V3 требует base64 без padding в конце (rstrip)
+    url_id = base64.urlsafe_b64encode(url.encode()).decode().rstrip("=")
     api_url = f"https://www.virustotal.com/api/v3/urls/{url_id}"
     
     req = urllib.request.Request(
         api_url, 
-        headers={"x-apikey": VT_API_KEY, "Accept": "application/json"}
+        headers={
+            "x-apikey": VT_API_KEY, 
+            "Accept": "application/json",
+            "User-Agent": "CyberShieldBot/1.0"
+        }
     )
     
     try:
-        with urllib.request.urlopen(req, timeout=2) as response:
+        logging.info(f"VT: Attempting to scan {url} (ID: {url_id})")
+        with urllib.request.urlopen(req, timeout=10) as response:
             data = json.loads(response.read().decode())
             stats = data['data']['attributes']['last_analysis_stats']
             malicious = stats.get('malicious', 0) + stats.get('suspicious', 0)
             total = sum(stats.values())
             
+            logging.info(f"VT: Response successful for {url_id}")
             if malicious > 0:
                 return MESSAGES.VT_THREAT.format(malicious=malicious, total=total)
             return MESSAGES.VT_CLEAN.format(total=total)
                 
     except urllib.error.HTTPError as e:
+        error_msg = e.read().decode()
+        logging.error(f"VT HTTP Error {e.code}: {error_msg}")
+        
         if e.code == 404:
             return MESSAGES.VT_NOT_FOUND
+        if e.code == 401:
+            return "⚠️ <b>VirusTotal:</b> Ошибка авторизации. Проверьте валидность API ключа."
         if e.code == 429:
-            return "⚠️ <b>VirusTotal:</b> Лимит запросов (4/мин) исчерпан. Попробуйте позже."
+            return "⚠️ <b>VirusTotal:</b> Лимит запросов (4/мин) исчерпан."
         return MESSAGES.VT_ERROR.format(code=e.code)
-    except Exception:
-        return ""
+        
+    except urllib.error.URLError as e:
+        logging.error(f"VT Connection Error: {e.reason}")
+        return "⚠️ <b>VirusTotal:</b> Ошибка соединения (DNS или сеть)."
+        
+    except Exception as e:
+        logging.exception("VT Unexpected Exception")
+        return f"⚠️ <b>VirusTotal:</b> Непредвиденная ошибка: {type(e).__name__}"
 
 # --- ЛОГИКА КЛАВИАТУР ---
 
@@ -94,14 +113,10 @@ def get_mode_kb():
 async def get_ai_answer(user_text: str, mode: str, vt_data: str = None) -> str:
     """
     Отправляет запрос в Groq (Llama) с учетом выбранного режима.
-    Если есть результаты VT (vt_data), передает их ИИ как системную директиву.
     """
     instruction = PROMPTS.get(mode, PROMPTS["general"])
-    
-    # Формируем базовый контекст
     messages = [{"role": "system", "content": instruction}]
     
-    # Инъекция данных VirusTotal для ИИ (если ссылка была в сообщении)
     if vt_data:
         vt_system_msg = MESSAGES.VT_SYSTEM_PROMPT.format(vt_data=vt_data)
         messages.append({"role": "system", "content": vt_system_msg})
@@ -140,9 +155,7 @@ async def mode_callback_handler(callback: types.CallbackQuery):
     new_mode_code = callback.data.split("_")[1]
     db.set_user_mode(callback.from_user.id, new_mode_code)
     
-    # Достаем красивое название со смайликом из твоего конфига
     pretty_name = MESSAGES.MODE_NAMES.get(new_mode_code, new_mode_code.upper())
-    
     new_text = f"Режим анализа изменен на: <b>{pretty_name}</b>\n\nПришлите подозрительный текст или перешлите сообщение."
     
     try:
@@ -163,7 +176,7 @@ async def mode_callback_handler(callback: types.CallbackQuery):
 
 @dp.message(Command("admin"), F.from_user.id == ADMIN_ID)
 async def admin_panel(message: types.Message):
-    """Открывает скрытое меню для управления моделями и выгрузки БД."""
+    """Открывает скрытое меню для управления моделями."""
     kb = [
         [KeyboardButton(text=SETTINGS.BTN_70B)],
         [KeyboardButton(text=SETTINGS.BTN_120B)],
@@ -202,16 +215,11 @@ async def export_db_handler(message: types.Message):
 
 @dp.message(F.text | F.caption)
 async def message_handler(message: types.Message):
-    """
-    Основная логика распределения нагрузки (Ссылка / Текст / Ссылка+Текст).
-    """
     raw_text = message.text or message.caption
     if not raw_text:
         return
 
-    # Защита от переполнения памяти сервера (обрезаем гигантские спам-сообщения)
     user_input = raw_text 
-
     user_id = message.from_user.id
     user_name = message.from_user.username or message.from_user.first_name
     
@@ -223,32 +231,28 @@ async def message_handler(message: types.Message):
     found_url = extract_url(user_input)
     text_without_url = user_input.replace(found_url, '').strip() if found_url else user_input
     
-    # СЦЕНАРИЙ 1: В сообщении ТОЛЬКО ссылка (или текста меньше 10 символов)
+    # СЦЕНАРИЙ 1: ТОЛЬКО ссылка
     if found_url and len(text_without_url) < 10:
         vt_result = scan_url_virustotal(found_url)
         await status_msg.edit_text(vt_result, parse_mode=ParseMode.HTML)
         db.log_request(user_id, user_name, user_input, vt_result, current_mode)
         return
 
-    # СЦЕНАРИЙ 2: В сообщении НЕТ ссылок (только текст)
+    # СЦЕНАРИЙ 2: ТОЛЬКО текст
     if not found_url:
         ai_response = await get_ai_answer(user_input, current_mode)
-        # HTML не используем, чтобы Llama случайно не сломала разметку
         await status_msg.edit_text(ai_response, parse_mode=None)
         db.log_request(user_id, user_name, user_input, ai_response, current_mode)
         
-    # СЦЕНАРИЙ 3: В сообщении есть И ССЫЛКА, И ТЕКСТ
+    # СЦЕНАРИЙ 3: И ССЫЛКА, И ТЕКСТ
     if found_url and len(text_without_url) >= 10:
         vt_result = scan_url_virustotal(found_url)
         ai_response = await get_ai_answer(user_input, current_mode, vt_data=vt_result)
-        
         final_response = f"{ai_response}\n\n{vt_result}"
         
         try:
-            # Пытаемся отправить с жирным текстом
             await status_msg.edit_text(final_response, parse_mode=ParseMode.HTML)
         except Exception:
-            # Если ИИ прислал < или > и сломал HTML, отправляем как есть
             await status_msg.edit_text(final_response, parse_mode=None)
             
         db.log_request(user_id, user_name, user_input, final_response, current_mode)
@@ -260,12 +264,12 @@ async def message_handler(message: types.Message):
             mode=current_mode,
             has_url='Да' if found_url else 'Нет',
             text=user_input,
-            response=ai_response if not found_url else final_response # Защита длины ответа
+            response=ai_response if not found_url else final_response
         )
         try:
             await bot.send_message(ADMIN_ID, report, parse_mode=ParseMode.HTML)
         except Exception as e:
-            logging.error(f"Ошибка отправки репорта: {e}")
+            logging.error(f"Admin report error: {e}")
 
 async def main():
     logging.info("--- Система КиберЩит запущена ---")
