@@ -195,7 +195,7 @@ async def message_handler(message: types.Message):
         return
 
     # Защита от переполнения памяти сервера (обрезаем гигантские спам-сообщения)
-    user_input = raw_text[:4000] 
+    user_input = raw_text 
 
     user_id = message.from_user.id
     user_name = message.from_user.username or message.from_user.first_name
@@ -244,8 +244,8 @@ async def message_handler(message: types.Message):
             user_name=user_name,
             mode=current_mode,
             has_url='Да' if found_url else 'Нет',
-            text=user_input[:200],
-            response=ai_response if not found_url else final_response[:500] # Защита длины ответа
+            text=user_input,
+            response=ai_response if not found_url else final_response # Защита длины ответа
         )
         try:
             await bot.send_message(ADMIN_ID, report, parse_mode=ParseMode.HTML)
