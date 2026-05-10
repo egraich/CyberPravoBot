@@ -133,22 +133,28 @@ async def start_handler(message: types.Message):
         reply_markup=get_mode_kb()
     )
 
-@dp.callback_query(F.data.startswith("setmode_"))
-async def handle_mode_callback(callback: types.CallbackQuery):
-    """Смена режима анализа по нажатию на инлайн-кнопку."""
+@dp.callback_query(F.data.startswith("mode_"))
+async def mode_callback_handler(callback: types.CallbackQuery):
+    """Изменение режима через кнопки под сообщением."""
     new_mode = callback.data.split("_")[1]
     db.set_user_mode(callback.from_user.id, new_mode)
     
-    pretty_mode = MESSAGES.MODE_NAMES.get(new_mode, "Стандарт")
+    await callback.answer(f"Режим изменен на: {new_mode.upper()}")
     
-    try:
-        await callback.message.edit_text(
-            MESSAGES.MODE_CHANGED.format(mode=pretty_mode),
+    # Текст, который мы хотим вывести
+    new_text = f"Режим анализа изменен на: <b>{new_mode.upper()}</b>\n\nПришлите подозрительный текст или перешлите сообщение."
+    
+    # FIX: Если в сообщении есть фото, используем edit_caption, иначе edit_text
+    if callback.message.photo:
+        await callback.message.edit_caption(
+            caption=new_text,
             reply_markup=get_mode_kb()
         )
-    except Exception:
-        pass
-    await callback.answer()
+    else:
+        await callback.message.edit_text(
+            text=new_text,
+            reply_markup=get_mode_kb()
+        )
 
 # --- ПАНЕЛЬ АДМИНИСТРАТОРА ---
 
