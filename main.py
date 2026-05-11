@@ -127,7 +127,7 @@ async def get_ai_answer(user_text: str, mode: str, vt_data: str = None) -> str:
         completion = ai_client.chat.completions.create(
             model=states["current_model"], 
             messages=messages,
-            temperature=0.33,
+            temperature=0.2,
             max_tokens=600
         )
         return completion.choices[0].message.content
