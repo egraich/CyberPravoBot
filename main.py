@@ -16,8 +16,10 @@ from groq import AsyncGroq
 # Local modules
 from config import MESSAGES, SETTINGS, PROMPTS
 from database import Database
+from dotenv import load_dotenv
 
 # --- CREDENTIALS & CONSTANTS ---
+load_dotenv()
 ADMIN_ID = int(os.getenv("ADMIN_ID", 0))
 AI_KEY = os.getenv("AI_KEY")
 BOT_TOKEN = os.getenv("BOT_TOKEN")
@@ -39,11 +41,31 @@ states = {"current_model": SETTINGS.MOD_L17}
 
 # --- UTILITY FUNCTIONS ---
 
-def extract_url(text: str) -> str | None:
-    """Finds and extracts the first valid URL in the text using regex."""
-    url_pattern = re.compile(r'(https?://[^\s]+)')
+async def extract_url(message: types.Message) -> str | None:
+    """
+    Finds and extracts the first valid URL in the text or caption using Telegram entities.
+    Falls back to a robust regex if no entities are found.
+    """
+    text = message.text or message.caption
+    if not text:
+        return None
+        
+    entities = message.entities or message.caption_entities
+    
+    # 1. Trust Telegram's built-in entity parser first
+    if entities:
+        for entity in entities:
+            if entity.type == "text_link":
+                return entity.url
+            if entity.type == "url":
+                return text[entity.offset : entity.offset + entity.length]
+    
+    # 2. Fallback to regex with sanitized punctuation handling
+    # Matches http/https and ignores trailing punctuation like dots or commas
+    url_pattern = re.compile(r'https?://[^\s()<>]+(?:\([\w\d]+\)|[^.,;:\s])')
     match = url_pattern.search(text)
-    return match.group(1) if match else None
+    
+    return match.group(0) if match else None
 
 async def scan_url_virustotal(url: str) -> str:
     """
@@ -236,19 +258,8 @@ async def message_handler(message: types.Message):
     
     status_msg = await message.answer(MESSAGES.SCANNING.format(mode=pretty_mode))
     
-    found_url = None
-    if message.entities:
-        for entity in message.entities:
-            if entity.type == "url":
-                found_url = user_input[entity.offset:entity.offset+entity.length]
-                break
-            elif entity.type == "text_link":
-                found_url = entity.url
-                break
-    
-    if not found_url:
-        found_url = extract_url(user_input)
-
+    # Extract URL using the unified asynchronous extractor
+    found_url = await extract_url(message)
     text_without_url = user_input.replace(found_url, '').strip() if found_url else user_input
     
     # --- THREAT INTELLIGENCE ROUTING ---
@@ -259,14 +270,19 @@ async def message_handler(message: types.Message):
     else:
         logging.info("DEBUG: No URL detected in the payload.")
 
+    # Determine response strategy based on payload composition
     if found_url and len(text_without_url) < 10:
+        # SCENARIO 1: URL only (Skip LLM processing to save tokens)
         final_response = vt_result
     elif not found_url:
+        # SCENARIO 2: Text only (Standard LLM evaluation)
         final_response = await get_ai_answer(user_input, current_mode)
     else:
+        # SCENARIO 3: Text and URL combined (Full deep scan)
         ai_response = await get_ai_answer(user_input, current_mode, vt_data=vt_result)
         final_response = f"{ai_response}\n\n{vt_result}"
 
+    # Dispatch final formatted response
     try:
         await status_msg.edit_text(final_response, parse_mode=ParseMode.HTML)
     except Exception as e:
