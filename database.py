@@ -1,18 +1,23 @@
-import sqlite3
+import aiosqlite
 import re
 import os
 from datetime import datetime
+from typing import Optional
 
 class Database:
-    def __init__(self, db_path="/data/cyber_shield.db"):
+    """
+    Asynchronous database controller for SQLite using aiosqlite.
+    Handles logging of user interactions and user settings.
+    """
+    def __init__(self, db_path: str = "/data/cyber_shield.db") -> None:
         self.db_path = db_path
         os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
-        self._create_tables()
 
-    def _create_tables(self):
-        with sqlite3.connect(self.db_path) as conn:
-            # ТАБЛИЦА 1: Логи (История всех проверок)
-            conn.execute('''
+    async def init_db(self) -> None:
+        """Initializes database tables asynchronously."""
+        async with aiosqlite.connect(self.db_path) as conn:
+            # TABLE 1: Logs (History of all system scans)
+            await conn.execute('''
                 CREATE TABLE IF NOT EXISTS logs (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     user_id INTEGER,
@@ -25,35 +30,38 @@ class Database:
                 )
             ''')
             
-            # ТАБЛИЦА 2: Настройки
-            # user_id тут UNIQUE, чтобы настройки не дублировались
-            conn.execute('''
+            # TABLE 2: User Settings
+            await conn.execute('''
                 CREATE TABLE IF NOT EXISTS user_settings (
                     user_id INTEGER PRIMARY KEY,
                     mode TEXT DEFAULT 'general'
                 )
             ''')
+            await conn.commit()
 
-    # --- РАБОТА С НАСТРОЙКАМИ ЮЗЕРА ---
+    # --- USER SETTINGS MANAGEMENT ---
 
-    def set_user_mode(self, user_id, mode) -> None:
-        """Сохраняем или обновляем режим юзера."""
-        with sqlite3.connect(self.db_path) as conn:
-            conn.execute('''
+    async def set_user_mode(self, user_id: int, mode: str) -> None:
+        """Saves or updates the active analysis mode for a specific user."""
+        async with aiosqlite.connect(self.db_path) as conn:
+            await conn.execute('''
                 INSERT INTO user_settings (user_id, mode) 
                 VALUES (?, ?) 
                 ON CONFLICT(user_id) DO UPDATE SET mode=excluded.mode
             ''', (user_id, mode))
+            await conn.commit()
 
-    def get_user_mode(self, user_id) -> str:
-        """Достаем режим. Если юзера нет — выдаем 'general'."""
-        with sqlite3.connect(self.db_path) as conn:
-            res = conn.execute("SELECT mode FROM user_settings WHERE user_id = ?", (user_id,)).fetchone()
-            return res[0] if res else "general"
+    async def get_user_mode(self, user_id: int) -> str:
+        """Retrieves the analysis mode for a user. Defaults to 'general'."""
+        async with aiosqlite.connect(self.db_path) as conn:
+            async with conn.execute("SELECT mode FROM user_settings WHERE user_id = ?", (user_id,)) as cursor:
+                res = await cursor.fetchone()
+                return res[0] if res else "general"
 
-    # --- ЛОГИРОВАНИЕ ---
+    # --- LOGGING SYSTEM ---
 
-    def extract_risk_score(self, bot_text):
+    def extract_risk_score(self, bot_text: str) -> Optional[int]:
+        """Extracts the integer risk score percentage from the AI's response."""
         try:
             first_line = bot_text.strip().split('\n')[0]
             match = re.search(r'(\d+)(?=%)', first_line)
@@ -61,11 +69,12 @@ class Database:
         except Exception:
             return None
 
-    def log_request(self, user_id, username, user_text, bot_verdict, mode):
-        """Записываем всё, включая режим, в котором проводился анализ."""
+    async def log_request(self, user_id: int, username: str, user_text: str, bot_verdict: str, mode: str) -> None:
+        """Logs the complete user request and AI verdict into the database."""
         score = self.extract_risk_score(bot_verdict)
-        with sqlite3.connect(self.db_path) as conn:
-            conn.execute('''
+        async with aiosqlite.connect(self.db_path) as conn:
+            await conn.execute('''
                 INSERT INTO logs (user_id, username, user_text, bot_verdict, risk_score, mode, timestamp)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
             ''', (user_id, username, user_text, bot_verdict, score, mode, datetime.now()))
+            await conn.commit()

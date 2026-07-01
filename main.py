@@ -2,10 +2,8 @@ import asyncio
 import logging
 import os
 import re
-import urllib.request
-import urllib.error
-import json
 import base64
+import aiohttp
 
 from aiogram import Bot, Dispatcher, F, types
 from aiogram.client.default import DefaultBotProperties
@@ -13,107 +11,109 @@ from aiogram.enums import ParseMode
 from aiogram.filters import Command
 from aiogram.types import FSInputFile, ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
 from aiogram.utils.keyboard import InlineKeyboardBuilder
-from groq import Groq
+from groq import AsyncGroq
 
-# Подключение локальных модулей
+# Local modules
 from config import MESSAGES, SETTINGS, PROMPTS
 from database import Database
 
-# --- НАСТРОЙКИ И КЛЮЧИ ---
-ADMIN_ID = 1111111111
+# --- CREDENTIALS & CONSTANTS ---
+ADMIN_ID = int(os.getenv("ADMIN_ID", 0))
 AI_KEY = os.getenv("AI_KEY")
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 VT_API_KEY = os.getenv("VT_API_KEY")
 
-# --- ИНИЦИАЛИЗАЦИЯ ОБЪЕКТОВ ---
+# --- INITIALIZATION ---
 logging.basicConfig(level=logging.INFO)
 
-ai_client = Groq(api_key=AI_KEY)
+ai_client = AsyncGroq(api_key=AI_KEY)
 db = Database()
+
 bot = Bot(
     token=BOT_TOKEN, 
     default=DefaultBotProperties(parse_mode=ParseMode.HTML)
 )
 dp = Dispatcher()
 
-# Храним текущую модель в памяти (для быстрой смены админом)
 states = {"current_model": SETTINGS.MOD_L17}
 
-# --- ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ---
+# --- UTILITY FUNCTIONS ---
 
-def extract_url(text: str) -> str:
-    """Ищет первую ссылку в тексте сообщения с помощью регулярного выражения."""
+def extract_url(text: str) -> str | None:
+    """Finds and extracts the first valid URL in the text using regex."""
     url_pattern = re.compile(r'(https?://[^\s]+)')
     match = url_pattern.search(text)
     return match.group(1) if match else None
 
-def scan_url_virustotal(url: str) -> str:
+async def scan_url_virustotal(url: str) -> str:
+    """
+    Asynchronously scans a URL using the VirusTotal API v3 via aiohttp.
+    Returns a localized string from configuration containing the scan results.
+    """
     if not VT_API_KEY:
         logging.error("VT: API Key is missing in environment variables!")
         return MESSAGES.VT_NO_KEY
     
-    # VirusTotal V3 требует base64 без padding в конце (rstrip)
     url_id = base64.urlsafe_b64encode(url.encode()).decode().rstrip("=")
     api_url = f"https://www.virustotal.com/api/v3/urls/{url_id}"
     
-    req = urllib.request.Request(
-        api_url, 
-        headers={
-            "x-apikey": VT_API_KEY, 
-            "Accept": "application/json",
-            "User-Agent": "CyberShieldBot/1.0"
-        }
-    )
+    headers = {
+        "x-apikey": VT_API_KEY, 
+        "Accept": "application/json",
+        "User-Agent": "CyberShieldBot/1.0"
+    }
     
     try:
         logging.info(f"VT: Attempting to scan {url} (ID: {url_id})")
-        with urllib.request.urlopen(req, timeout=10) as response:
-            data = json.loads(response.read().decode())
-            stats = data['data']['attributes']['last_analysis_stats']
-            malicious = stats.get('malicious', 0) + stats.get('suspicious', 0)
-            total = sum(stats.values())
-            
-            logging.info(f"VT: Response successful for {url_id}")
-            if malicious > 0:
-                return MESSAGES.VT_THREAT.format(malicious=malicious, total=total)
-            return MESSAGES.VT_CLEAN.format(total=total)
+        async with aiohttp.ClientSession() as session:
+            async with session.get(api_url, headers=headers, timeout=10) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    stats = data['data']['attributes']['last_analysis_stats']
+                    malicious = stats.get('malicious', 0) + stats.get('suspicious', 0)
+                    total = sum(stats.values())
+                    
+                    logging.info(f"VT: Response successful for {url_id}")
+                    if malicious > 0:
+                        return MESSAGES.VT_THREAT.format(malicious=malicious, total=total)
+                    return MESSAGES.VT_CLEAN.format(total=total)
                 
-    except urllib.error.HTTPError as e:
-        error_msg = e.read().decode()
-        logging.error(f"VT HTTP Error {e.code}: {error_msg}")
-        
-        if e.code == 404:
-            return MESSAGES.VT_NOT_FOUND
-        if e.code == 401:
-            return "⚠️ <b>VirusTotal:</b> Ошибка авторизации. Проверьте валидность API ключа."
-        if e.code == 429:
-            return "⚠️ <b>VirusTotal:</b> Лимит запросов (4/мин) исчерпан."
-        return MESSAGES.VT_ERROR.format(code=e.code)
-        
-    except urllib.error.URLError as e:
-        logging.error(f"VT Connection Error: {e.reason}")
-        return "⚠️ <b>VirusTotal:</b> Ошибка соединения (DNS или сеть)."
-        
+                error_text = await response.text()
+                logging.error(f"VT HTTP Error {response.status}: {error_text}")
+                
+                if response.status == 404:
+                    return MESSAGES.VT_NOT_FOUND
+                if response.status == 401:
+                    return MESSAGES.VT_AUTH_ERROR
+                if response.status == 429:
+                    return MESSAGES.VT_RATE_LIMIT
+                
+                return MESSAGES.VT_ERROR.format(code=response.status)
+                
+    except asyncio.TimeoutError:
+        logging.error("VT: Request timed out.")
+        return MESSAGES.VT_TIMEOUT
+    except aiohttp.ClientError as e:
+        logging.error(f"VT Connection Error: {e}")
+        return MESSAGES.VT_CONNECTION_ERROR
     except Exception as e:
         logging.exception("VT Unexpected Exception")
-        return f"⚠️ <b>VirusTotal:</b> Непредвиденная ошибка: {type(e).__name__}"
+        return MESSAGES.VT_UNEXPECTED_ERROR.format(error=type(e).__name__)
 
-# --- ЛОГИКА КЛАВИАТУР ---
+# --- KEYBOARD BUILDERS ---
 
-def get_mode_kb():
-    """Динамически собирает инлайн-кнопки режимов из config.py."""
+def get_mode_kb() -> types.InlineKeyboardMarkup:
+    """Dynamically builds the inline keyboard for mode selection based on config."""
     builder = InlineKeyboardBuilder()
     for code, pretty_name in MESSAGES.MODE_NAMES.items():
         builder.button(text=pretty_name, callback_data=f"mode_{code}")
     builder.adjust(1) 
     return builder.as_markup()
 
-# --- ВЗАИМОДЕЙСТВИЕ С ИИ ---
+# --- AI INTEGRATION LAYER ---
 
 async def get_ai_answer(user_text: str, mode: str, vt_data: str = None) -> str:
-    """
-    Отправляет запрос в Groq (Llama) с учетом выбранного режима.
-    """
+    """Sends an asynchronous request to the Groq API using the selected analysis protocol."""
     instruction = PROMPTS.get(mode, PROMPTS["general"])
     messages = [{"role": "system", "content": instruction}]
     
@@ -124,7 +124,7 @@ async def get_ai_answer(user_text: str, mode: str, vt_data: str = None) -> str:
     messages.append({"role": "user", "content": user_text})
     
     try:
-        completion = ai_client.chat.completions.create(
+        completion = await ai_client.chat.completions.create(
             model=states["current_model"], 
             messages=messages,
             temperature=0.33,
@@ -133,13 +133,13 @@ async def get_ai_answer(user_text: str, mode: str, vt_data: str = None) -> str:
         return completion.choices[0].message.content
     except Exception as e:
         logging.error(f"Groq API Error: {e}")
-        return f"Ошибка ИИ-анализа: {e}"
+        return MESSAGES.AI_ERROR.format(error=e)
 
-# --- ОБРАБОТЧИКИ КОМАНД ---
+# --- COMMAND HANDLERS ---
 
 @dp.message(Command("start", "st"))
 async def start_handler(message: types.Message):
-    """Приветствие с картинкой и выдача меню выбора режимов."""
+    """Handles the /start command, sending a welcome banner and the mode selection menu."""
     START_PHOTO_ID = "AgACAgIAAxkBAAIIVWoAAdBfCBRzpozezoFosa8YXrIwbgACRhhrG4QQCEgGn5dtYsTd0gEAAwIAA3kAAzsE" 
     
     await message.answer_photo(
@@ -150,13 +150,13 @@ async def start_handler(message: types.Message):
 
 @dp.callback_query(F.data.startswith("mode_"))
 async def mode_callback_handler(callback: types.CallbackQuery):
-    """Изменение режима через кнопки под сообщением."""
+    """Handles inline keyboard clicks for updating the active scanning profile."""
     await callback.answer()
     new_mode_code = callback.data.split("_")[1]
-    db.set_user_mode(callback.from_user.id, new_mode_code)
+    await db.set_user_mode(callback.from_user.id, new_mode_code)
     
     pretty_name = MESSAGES.MODE_NAMES.get(new_mode_code, new_mode_code.upper())
-    new_text = f"Режим анализа изменен на: <b>{pretty_name}</b>\n\nПришлите подозрительный текст или перешлите сообщение."
+    new_text = MESSAGES.MODE_CHANGED.format(mode=pretty_name)
     
     try:
         if callback.message.photo:
@@ -170,13 +170,13 @@ async def mode_callback_handler(callback: types.CallbackQuery):
                 reply_markup=get_mode_kb()
             )
     except Exception as e:
-        logging.error(f"Edit error: {e}")
+        logging.error(f"Message edit error: {e}")
 
-# --- ПАНЕЛЬ АДМИНИСТРАТОРА ---
+# --- ADMINISTRATOR PANEL ---
 
 @dp.message(Command("admin"), F.from_user.id == ADMIN_ID)
 async def admin_panel(message: types.Message):
-    """Открывает скрытое меню для управления моделями."""
+    """Activates the hidden admin panel for real-time model management and DB exports."""
     kb = [
         [KeyboardButton(text=SETTINGS.BTN_70B)],
         [KeyboardButton(text=SETTINGS.BTN_120B)],
@@ -192,31 +192,36 @@ async def admin_panel(message: types.Message):
 
 @dp.message(F.from_user.id == ADMIN_ID, F.text.in_({SETTINGS.BTN_70B, SETTINGS.BTN_120B, SETTINGS.BTN_17B}))
 async def change_model(message: types.Message):
+    """Updates the global LLM target based on admin input."""
     if message.text == SETTINGS.BTN_70B:
         states["current_model"] = SETTINGS.MOD_L70
     elif message.text == SETTINGS.BTN_120B:
         states["current_model"] = SETTINGS.MOD_G120
     else:
         states["current_model"] = SETTINGS.MOD_L17
-    await message.answer(f"✅ Установлена модель: {message.text}")
+        
+    await message.answer(MESSAGES.MODEL_SET.format(model=message.text))
 
 @dp.message(F.text == SETTINGS.BTN_HIDE, F.from_user.id == ADMIN_ID)
 async def hide_panel(message: types.Message):
+    """Dismisses the admin keyboard interface."""
     await message.answer(MESSAGES.ADMIN_HIDE, reply_markup=ReplyKeyboardRemove())
 
 @dp.message(F.text == SETTINGS.BTN_EXPORT, F.from_user.id == ADMIN_ID)
 async def export_db_handler(message: types.Message):
+    """Exports and sends the current SQLite database payload to the admin."""
     if os.path.exists(db.db_path):
         await message.answer_document(FSInputFile(db.db_path), caption=MESSAGES.DB_CAPTION)
     else:
         await message.answer(MESSAGES.DB_NOT_FOUND)
 
-# --- ГЛАВНЫЙ АНАЛИЗАТОР ---
+# --- CORE MESSAGE ROUTER ---
 
 @dp.message(F.text | F.caption)
 async def message_handler(message: types.Message):
     """
-    Основная логика распределения нагрузки (Ссылка / Текст / Ссылка+Текст).
+    Primary processing pipeline. 
+    Routes payloads to VT and/or LLM depending on the detection of embedded URLs.
     """
     raw_text = message.text or message.caption
     if not raw_text:
@@ -226,12 +231,11 @@ async def message_handler(message: types.Message):
     user_id = message.from_user.id
     user_name = message.from_user.username or message.from_user.first_name
     
-    current_mode = db.get_user_mode(user_id)
-    pretty_mode = MESSAGES.MODE_NAMES.get(current_mode, "Стандарт")
+    current_mode = await db.get_user_mode(user_id)
+    pretty_mode = MESSAGES.MODE_NAMES.get(current_mode, "Standard")
     
-    status_msg = await message.answer(f"[{pretty_mode}] {MESSAGES.SCANNING}")
+    status_msg = await message.answer(MESSAGES.SCANNING.format(mode=pretty_mode))
     
-    # Пытаемся достать ссылку не только регуляркой, но и через сущности Telegram
     found_url = None
     if message.entities:
         for entity in message.entities:
@@ -247,55 +251,52 @@ async def message_handler(message: types.Message):
 
     text_without_url = user_input.replace(found_url, '').strip() if found_url else user_input
     
-    # --- ЛОГИКА ВЫЗОВА VT И ИИ ---
+    # --- THREAT INTELLIGENCE ROUTING ---
     vt_result = None
     if found_url:
-        logging.info(f"DEBUG: Ссылка найдена: {found_url}. Запускаю VT...")
-        vt_result = scan_url_virustotal(found_url)
+        logging.info(f"DEBUG: URL detected: {found_url}. Initiating VT scan...")
+        vt_result = await scan_url_virustotal(found_url)
     else:
-        logging.info("DEBUG: Ссылка НЕ найдена в сообщении.")
+        logging.info("DEBUG: No URL detected in the payload.")
 
-    # Решаем, какой ответ давать
     if found_url and len(text_without_url) < 10:
-        # СЦЕНАРИЙ 1: ТОЛЬКО ссылка
         final_response = vt_result
     elif not found_url:
-        # СЦЕНАРИЙ 2: ТОЛЬКО текст
         final_response = await get_ai_answer(user_input, current_mode)
     else:
-        # СЦЕНАРИЙ 3: И ССЫЛКА, И ТЕКСТ
         ai_response = await get_ai_answer(user_input, current_mode, vt_data=vt_result)
         final_response = f"{ai_response}\n\n{vt_result}"
 
-    # Отправка результата
     try:
         await status_msg.edit_text(final_response, parse_mode=ParseMode.HTML)
     except Exception as e:
-        logging.error(f"HTML Error: {e}")
+        logging.error(f"HTML Formatting Error: {e}")
         await status_msg.edit_text(final_response, parse_mode=None)
             
-    db.log_request(user_id, user_name, user_input, final_response, current_mode)
+    await db.log_request(user_id, user_name, user_input, final_response, current_mode)
 
-    # --- Уведомление администратора ---
+    # --- Administrator Notification Pipeline ---
     if user_id != ADMIN_ID:
         report = MESSAGES.ADMIN_REPORT.format(
             user_name=user_name,
             mode=current_mode,
-            has_url='Да' if found_url else 'Нет',
+            has_url='Yes' if found_url else 'No',
             text=user_input,
             response=final_response
         )
         try:
             await bot.send_message(ADMIN_ID, report, parse_mode=ParseMode.HTML)
         except Exception as e:
-            logging.error(f"Ошибка отправки репорта: {e}")
+            logging.error(f"Failed to dispatch admin report: {e}")
 
 async def main():
-    logging.info("--- Система КиберЩит запущена ---")
+    """Application entry point and core loop initialization."""
+    logging.info("--- CyberShield System Initializing ---")
+    await db.init_db()
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
-        logging.info("Система остановлена")
+        logging.info("System gracefully halted by user")

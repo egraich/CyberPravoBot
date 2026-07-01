@@ -13,6 +13,7 @@ class Settings:
 
 
 class Messages:
+    # --- Interface messages ---
     START = """<b>🛡 КиберЩит #КиберПраво 2026</b>
 <i>Твой личный ИИ-защитник против мошенников в Беларуси</i>
 
@@ -34,21 +35,15 @@ class Messages:
     }
     
     MODE_CHANGED = "✅ Режим анализа изменен на: <b>{mode}</b>\n\nПришлите подозрительный текст или перешлите сообщение."
+    SCANNING = "[{mode}] Выполняю сканирование..."
+    
+    # --- Admin Messages ---
     ADMIN_OPEN = "🔧 Панель управления активирована.\nТекущая модель: {model}"
-    SCANNING = "Выполняю сканирование..."
     ADMIN_HIDE = "Панель скрыта. Бот работает в штатном режиме."
+    MODEL_SET = "✅ Установлена модель: {model}"
     DB_NOT_FOUND = "Файл базы данных не найден."
     DB_CAPTION = "Актуальный дамп базы данных CyberShield 🛡"
-
-    # --- Тексты для VirusTotal ---
-    VT_NO_KEY = "<em>⚠️ Ошибка: Ключ VirusTotal не найден в системе.</em>\n"
-    VT_THREAT = "🚨 <b>VirusTotal: {malicious}/{total}</b> антивирусов нашли угрозу!"
-    VT_CLEAN = "✅ <b>VirusTotal:</b> Ссылка Безопасна (0/{total})."
-    VT_NOT_FOUND = "⚠️ <b>VirusTotal:</b> Этой ссылки еще нет в базе. Будьте осторожны."
-    VT_ERROR = "⚠️ <b>VirusTotal:</b> Ошибка сервера ({code})"
-    VT_SYSTEM_PROMPT = "Внимание! Встроенный модуль VirusTotal проверил ссылку из сообщения и сообщает: {vt_data}. Обязательно учти эту информацию при вынесении вердикта и составлении прогноза рисков."
-
-    # --- Тексты для уведомлений администратора ---
+    
     ADMIN_REPORT = (
         "🔔 <b>Пользователь:</b> <code>{user_name}</code>\n"
         "⚙️ <b>Режим:</b> {mode}\n"
@@ -58,6 +53,22 @@ class Messages:
         "🛡 <b>Ответ бота:</b>\n{response}"
     )
 
+    # --- Texts for VirusTotal ---
+    VT_NO_KEY = "<em>⚠️ Ошибка: Ключ VirusTotal не найден в системе.</em>\n"
+    VT_THREAT = "🚨 <b>VirusTotal: {malicious}/{total}</b> антивирусов нашли угрозу!"
+    VT_CLEAN = "✅ <b>VirusTotal:</b> Ссылка Безопасна (0/{total})."
+    VT_NOT_FOUND = "⚠️ <b>VirusTotal:</b> Этой ссылки еще нет в базе. Будьте осторожны."
+    VT_ERROR = "⚠️ <b>VirusTotal:</b> Ошибка сервера ({code})"
+    
+    # Advanced errors statuses for VT and AI
+    VT_AUTH_ERROR = "⚠️ <b>VirusTotal:</b> Ошибка авторизации. Проверьте правильность API ключа."
+    VT_RATE_LIMIT = "⚠️ <b>VirusTotal:</b> Лимит запросов (4/мин) исчерпан."
+    VT_TIMEOUT = "⚠️ <b>VirusTotal:</b> Превышено время ожидания ответа. Попробуйте позже."
+    VT_CONNECTION_ERROR = "⚠️ <b>VirusTotal:</b> Ошибка соединения (DNS или сеть)."
+    VT_UNEXPECTED_ERROR = "⚠️ <b>VirusTotal:</b> Непредвиденная ошибка: {error}"
+    AI_ERROR = "Ошибка ИИ-анализа: {error}"
+    
+    VT_SYSTEM_PROMPT = "Внимание! Встроенный модуль VirusTotal проверил ссылку из сообщения и сообщает: {vt_data}. Обязательно учти эту информацию при вынесении вердикта и составлении прогноза рисков."
 
 SETTINGS = Settings()
 MESSAGES = Messages()
