@@ -13,7 +13,7 @@ class Settings:
 
 
 class Messages:
-    # --- Interface messages ---
+    # --- INTERFACE MESSAGES ---
     START = """<b>🛡 КиберЩит #КиберПраво 2026</b>
 <i>Твой личный ИИ-защитник против мошенников в Беларуси</i>
 
@@ -53,14 +53,14 @@ class Messages:
         "🛡 <b>Ответ бота:</b>\n{response}"
     )
 
-    # --- Texts for VirusTotal ---
+    # --- TEXTS FOR VIRUS TOTAL ---
     VT_NO_KEY = "<em>⚠️ Ошибка: Ключ VirusTotal не найден в системе.</em>\n"
     VT_THREAT = "🚨 <b>VirusTotal: {malicious}/{total}</b> антивирусов нашли угрозу!"
     VT_CLEAN = "✅ <b>VirusTotal:</b> Ссылка Безопасна (0/{total})."
     VT_NOT_FOUND = "⚠️ <b>VirusTotal:</b> Этой ссылки еще нет в базе. Будьте осторожны."
     VT_ERROR = "⚠️ <b>VirusTotal:</b> Ошибка сервера ({code})"
     
-    # Advanced errors statuses for VT and AI
+    # --- ADVANCED ERROR STATUSES FOR VT AND AI ---
     VT_AUTH_ERROR = "⚠️ <b>VirusTotal:</b> Ошибка авторизации. Проверьте правильность API ключа."
     VT_RATE_LIMIT = "⚠️ <b>VirusTotal:</b> Лимит запросов (4/мин) исчерпан."
     VT_TIMEOUT = "⚠️ <b>VirusTotal:</b> Превышено время ожидания ответа. Попробуйте позже."
