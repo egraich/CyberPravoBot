@@ -61,7 +61,7 @@ The core routing layer natively interfaces with the Groq API infrastructure, run
 
 2. **Establish Secure Configurations:**
    Generate a local .env configuration payload inside the root directory:
-   ```
+   ```bash
    BOT_TOKEN=your_telegram_bot_token_here
    ADMIN_ID=your_numerical_telegram_user_id
    AI_KEY=your_groq_api_key_credentials
@@ -69,24 +69,16 @@ The core routing layer natively interfaces with the Groq API infrastructure, run
    ```
 
 3. Initialize Core Modules:
-   ```
+   ```bash
    python main.py
    ```
 
+---
+
 ## 📜 Open Source Licensing
 
-This software architecture is fully distributed under the **MIT License**.
+This project infrastructure is fully open-source and distributed under the **MIT License**. 
 
-```
-Copyright (c) 2026 @egraich
+For comprehensive terms, conditions, and liability limitations, please refer to the accompanying [LICENSE](LICENSE) file located in the root directory.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons...
-```
-
-For comprehensive compliance guidelines, see the accompanying LICENSE file.
-
-Maintained with ❤️ by @egraich
+Maintained with 💡 by [@egraich](https://github.com/egraich)
