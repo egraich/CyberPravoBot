@@ -1,5 +1,9 @@
 # CyberPravoBot 🛡️
 
+[Python](https://img.shields.io/badge/python-3.10%2B-blue?style=flat-square&logo=python&logoColor=white)
+[Aiogram](https://img.shields.io/badge/framework-aiogram_3.x-green?style=flat-square&logo=telegram&logoColor=white)
+[License](https://img.shields.io/badge/license-MIT-red?style=flat-square)
+
 An asynchronous Telegram bot powered by LLMs and threat intelligence to detect phishing, social engineering, and malicious URLs in real-time.
 
 ---
@@ -55,8 +59,9 @@ The routing layer connects to the Groq API infrastructure and dynamically select
 
 1. **Clone the repository:**
    ```bash
-   git clone [https://github.com/egraich/CyberPravoBot.git](https://github.com/egraich/CyberPravoBot.git)
+   git clone https://github.com/egraich/CyberPravoBot.git
    cd CyberPravoBot
+
    ```
 
 2. **Install dependencies:**
