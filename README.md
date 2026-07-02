@@ -25,7 +25,7 @@ An asynchronous Telegram bot powered by LLMs and threat intelligence to detect p
 
 ## 📸 Demonstration
 
-![CyberPravoBot Live Preview](assets/demo.gif)
+![CyberPravoBot Live Preview](assets/demo.mp4)
 
 ---
 
