@@ -2,7 +2,10 @@
 
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue?style=flat-square&logo=python&logoColor=white) &nbsp; ![Aiogram](https://img.shields.io/badge/framework-aiogram_3.x-green?style=flat-square&logo=telegram&logoColor=white) &nbsp; ![License](https://img.shields.io/badge/license-MIT-red?style=flat-square)
 
-
+> 💡 **The Backstory:** 
+> This project was built for the republican cyber-security competition **#КиберПраво** (#CyberLaw). Due to a bureaucratic mess at the school level, my official application was lost, and the bot never reached the jury — stripping me of the chance to fight for the grand prize.
+> 
+> Instead of letting a production-ready, high-potential AI security framework rot in a private folder, I am releasing it to the world. This code is a personal statement by [egraich](https://github.com/egraich) as an independent developer. Use it, fork it, and build something better.
 
 An asynchronous Telegram bot powered by LLMs and threat intelligence to detect phishing, social engineering, and malicious URLs in real-time.
 
