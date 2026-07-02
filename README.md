@@ -1,8 +1,8 @@
 # CyberPravoBot 🛡️
 
-[Python](https://img.shields.io/badge/python-3.10%2B-blue?style=flat-square&logo=python&logoColor=white)
-[Aiogram](https://img.shields.io/badge/framework-aiogram_3.x-green?style=flat-square&logo=telegram&logoColor=white)
-[License](https://img.shields.io/badge/license-MIT-red?style=flat-square)
+![Python](https://img.shields.io/badge/python-3.10%2B-blue?style=flat-square&logo=python&logoColor=white)
+![Aiogram](https://img.shields.io/badge/framework-aiogram_3.x-green?style=flat-square&logo=telegram&logoColor=white)
+![License](https://img.shields.io/badge/license-MIT-red?style=flat-square)
 
 An asynchronous Telegram bot powered by LLMs and threat intelligence to detect phishing, social engineering, and malicious URLs in real-time.
 
@@ -74,7 +74,7 @@ The routing layer connects to the Groq API infrastructure and dynamically select
    ```env
    BOT_TOKEN=your_telegram_bot_token_here
    ADMIN_ID=your_numerical_telegram_user_id
-   AI_KEY=your_groq_api_key_credentials
+   GROQ_API_KEY=your_groq_api_key_credentials
    VT_API_KEY=your_virustotal_v3_api_key
    ```
 
