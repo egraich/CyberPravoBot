@@ -81,4 +81,4 @@ This project infrastructure is fully open-source and distributed under the **MIT
 
 For comprehensive terms, conditions, and liability limitations, please refer to the accompanying [LICENSE](LICENSE) file located in the root directory.
 
-Maintained with 💡 by [@egraich](https://github.com/egraich)
+Maintained with ❤️ by [@egraich](https://github.com/egraich)
