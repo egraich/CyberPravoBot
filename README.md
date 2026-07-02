@@ -25,7 +25,7 @@ An asynchronous Telegram bot powered by LLMs and threat intelligence to detect p
 
 ## 📸 Demonstration
 
-<video src="assets/demo.mp4" autoplay loop muted playsinline width="100%"></video>
+<video src="https://github.com/user-attachments/assets/3606ac11-001e-45e8-b746-acc80d5a2bcc" autoplay loop muted playsinline width="100%"></video>
 
 ---
 
