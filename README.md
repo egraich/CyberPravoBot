@@ -59,7 +59,7 @@ The routing layer connects to the Groq API infrastructure and dynamically select
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/egraich/CyberPravoBot.git
+   git clone https://github.com/egraich/CyberPravoBot
    cd CyberPravoBot
 
    ```
