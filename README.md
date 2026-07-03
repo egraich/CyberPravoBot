@@ -27,7 +27,7 @@ An asynchronous Telegram bot powered by LLMs and threat intelligence to detect p
 
 <p align="center">
   <a href="https://github.com/user-attachments/assets/3606ac11-001e-45e8-b746-acc80d5a2bcc">
-    <img src="assets/preview.png" alt="CyberPravoBot Live Preview" width="100%">
+    <img src="assets/preview.jpg" alt="CyberPravoBot Live Preview" width="100%">
   </a>
 </p>
 
