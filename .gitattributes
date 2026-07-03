@@ -1,0 +1,2 @@
+assets/export-ignore
+assets/* filter=lfs diff=lfs merge=lfs -text
