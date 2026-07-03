@@ -68,7 +68,6 @@ The routing layer connects to the Groq API infrastructure and dynamically select
    ```bash
    git clone https://github.com/egraich/CyberPravoBot
    cd CyberPravoBot
-
    ```
 
 2. **Install dependencies:**
@@ -89,6 +88,8 @@ The routing layer connects to the Groq API infrastructure and dynamically select
    ```bash
    python main.py
    ```
+
+> ℹ️ **Note on Deployment:** The `amvera.yml` file located in the root directory is a strictly technical configuration required for automated hosting deployment on the Amvera cloud infrastructure. If you are running the bot locally, you can safely ignore this file.
 
 ---
 
