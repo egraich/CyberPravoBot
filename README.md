@@ -25,7 +25,9 @@ An asynchronous Telegram bot powered by LLMs and threat intelligence to detect p
 
 ## 📸 Demonstration
 
-<video src="https://github.com/user-attachments/assets/3606ac11-001e-45e8-b746-acc80d5a2bcc" autoplay="autoplay" loop="loop" muted="muted" playsinline="playsinline" width="100%"></video>
+<p align="center">
+  <video src="https://github.com/user-attachments/assets/3606ac11-001e-45e8-b746-acc80d5a2bcc" autoplay loop muted playsinline width="100%"></video>
+</p>
 
 ---
 
@@ -94,4 +96,4 @@ This project is open-source and distributed under the **MIT License**.
 
 For details on usage permissions and liability limitations, please refer to the [LICENSE](LICENSE) file in the root directory.
 
-Maintained with ❤️ by [@egraich](https://github.com/egraich)
+Maintained with ❤️ by [egraich](https://github.com/egraich)
