@@ -42,7 +42,7 @@ For security checks, the bot takes a URL, converts it to base64, and sends it to
 ### Requirements
 * Python 3.10 or higher
 * VirusTotal API Key and Groq API Key
-* All from requirements.txt ¯\_(ツ)_/¯
+* All from requirements.txt ¯\\_(ツ)_/¯
 
 ### Setup Steps
 1. **Clone the project:**
@@ -80,14 +80,12 @@ I originally built this bot for a big cyber-security competition in Belarus call
 
 ---
 
-## AI Disclosure
+## AI Usage
 
-As required by Stardance rules: 
-I used an LLM as a coding assistant to help me with boilerplate async templates, database design, and fast debugging. However, all the main logic, API integrations, prompt engineering, and over 100 manual bug fixes were done entirely by myself.
-
+I used an gemini as a coding assistant to help me learn async programming and base rules of PEP 8 coding.
 ---
 
 ## License
-This project is open-source under the MIT License. 
+This project is open-source under the MIT License in LICENSE file. 
 
 Made by [egraich](https://github.com/egraich)
