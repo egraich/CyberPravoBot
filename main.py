@@ -224,7 +224,6 @@ async def change_model(message: types.Message):
         states["current_model"] = SETTINGS.MOD_L17
         
     await db.set_setting("current_model", states["current_model"])
-
     await message.answer(MESSAGES.MODEL_SET.format(model=message.text))
 
 @dp.message(F.text == SETTINGS.BTN_HIDE, F.from_user.id == ADMIN_ID)
