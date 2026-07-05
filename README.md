@@ -99,4 +99,12 @@ This project is open-source and distributed under the **MIT License**.
 
 For details on usage permissions and liability limitations, please refer to the [LICENSE](LICENSE) file in the root directory.
 
+---
+
+## 🤖 AI Usage
+
+This project uses AI as a development assistant. 
+- AI helped with code architecture, async templates, and debugging.
+- All final logic, integrations, and manual fixes (100+ commits) were done by me.
+
 Maintained with ❤️ by [egraich](https://github.com/egraich)
