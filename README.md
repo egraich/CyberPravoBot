@@ -70,7 +70,7 @@ For security checks, the bot takes a URL, converts it to base64, and sends it to
    python main.py
    ```
 
->(Note: You can ignore `amvera.yml`. It is only used for cloud deployment on Amvera infrastructure).*
+>(Note: You can ignore `amvera.yml`. It is only used for cloud deployment on Amvera infrastructure).
 
 ---
 
