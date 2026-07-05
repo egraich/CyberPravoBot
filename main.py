@@ -39,6 +39,8 @@ dp = Dispatcher()
 
 states = {"current_model": SETTINGS.MOD_L17}
 
+http_session: aiohttp.ClientSession = None
+
 # --- UTILITY FUNCTIONS ---
 
 async def extract_url(message: types.Message) -> str | None:
@@ -87,30 +89,29 @@ async def scan_url_virustotal(url: str) -> str:
     
     try:
         logging.info(f"VT: Attempting to scan {url} (ID: {url_id})")
-        async with aiohttp.ClientSession() as session:
-            async with session.get(api_url, headers=headers, timeout=10) as response:
-                if response.status == 200:
-                    data = await response.json()
-                    stats = data['data']['attributes']['last_analysis_stats']
-                    malicious = stats.get('malicious', 0) + stats.get('suspicious', 0)
-                    total = sum(stats.values())
-                    
-                    logging.info(f"VT: Response successful for {url_id}")
-                    if malicious > 0:
-                        return MESSAGES.VT_THREAT.format(malicious=malicious, total=total)
-                    return MESSAGES.VT_CLEAN.format(total=total)
+        async with http_session.get(api_url, headers=headers, timeout=10) as response:
+            if response.status == 200:
+                data = await response.json()
+                stats = data['data']['attributes']['last_analysis_stats']
+                malicious = stats.get('malicious', 0) + stats.get('suspicious', 0)
+                total = sum(stats.values())
                 
-                error_text = await response.text()
-                logging.error(f"VT HTTP Error {response.status}: {error_text}")
-                
-                if response.status == 404:
-                    return MESSAGES.VT_NOT_FOUND
-                if response.status == 401:
-                    return MESSAGES.VT_AUTH_ERROR
-                if response.status == 429:
-                    return MESSAGES.VT_RATE_LIMIT
-                
-                return MESSAGES.VT_ERROR.format(code=response.status)
+                logging.info(f"VT: Response successful for {url_id}")
+                if malicious > 0:
+                    return MESSAGES.VT_THREAT.format(malicious=malicious, total=total)
+                return MESSAGES.VT_CLEAN.format(total=total)
+            
+            error_text = await response.text()
+            logging.error(f"VT HTTP Error {response.status}: {error_text}")
+            
+            if response.status == 404:
+                return MESSAGES.VT_NOT_FOUND
+            if response.status == 401:
+                return MESSAGES.VT_AUTH_ERROR
+            if response.status == 429:
+                return MESSAGES.VT_RATE_LIMIT
+            
+            return MESSAGES.VT_ERROR.format(code=response.status)
                 
     except asyncio.TimeoutError:
         logging.error("VT: Request timed out.")
@@ -307,9 +308,14 @@ async def message_handler(message: types.Message):
 
 async def main():
     """Application entry point and core loop initialization."""
+    global http_session
     logging.info("--- CyberShield System Initializing ---")
     await db.init_db()
-    await dp.start_polling(bot)
+    
+    # Открываем сессию один раз на всё время работы приложения
+    async with aiohttp.ClientSession() as session:
+        http_session = session
+        await dp.start_polling(bot)
 
 if __name__ == "__main__":
     try:
