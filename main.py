@@ -223,6 +223,8 @@ async def change_model(message: types.Message):
     else:
         states["current_model"] = SETTINGS.MOD_L17
         
+    await db.set_setting("current_model", states["current_model"])
+
     await message.answer(MESSAGES.MODEL_SET.format(model=message.text))
 
 @dp.message(F.text == SETTINGS.BTN_HIDE, F.from_user.id == ADMIN_ID)
@@ -311,8 +313,11 @@ async def main():
     global http_session
     logging.info("--- CyberShield System Initializing ---")
     await db.init_db()
+
+    saved_model = await db.get_setting("current_model", SETTINGS.MOD_L17)
+    states["current_model"] = saved_model
+    logging.info(f"Loaded active AI model from DB: {saved_model}")
     
-    # Открываем сессию один раз на всё время работы приложения
     async with aiohttp.ClientSession() as session:
         http_session = session
         await dp.start_polling(bot)
