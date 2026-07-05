@@ -83,6 +83,13 @@ I originally built this bot for a big cyber-security competition in Belarus call
 ## AI Usage
 
 I used an gemini as a coding assistant to help me learn async programming and base rules of PEP 8 coding.
+
+---
+
+## Localization 
+
+Because this bot was made for a Belarusian competition, the whole UI is in Russian, but you can easily localize the UI to your own language in the `config.py` file.
+
 ---
 
 ## License
