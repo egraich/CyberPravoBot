@@ -13,7 +13,7 @@ from aiogram.types import FSInputFile, ReplyKeyboardMarkup, KeyboardButton, Repl
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from groq import AsyncGroq
 
-# Local modules
+# --- Local modules ---
 from config import MESSAGES, SETTINGS, PROMPTS
 from database import Database
 from dotenv import load_dotenv
