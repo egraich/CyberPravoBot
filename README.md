@@ -1,29 +1,8 @@
-# CyberPravoBot 🛡️
+# CyberPravoBot
 
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue?style=flat-square&logo=python&logoColor=white) &nbsp; ![Aiogram](https://img.shields.io/badge/framework-aiogram_3.x-green?style=flat-square&logo=telegram&logoColor=white) &nbsp; ![License](https://img.shields.io/badge/license-MIT-red?style=flat-square)
 
-An asynchronous Telegram bot powered by LLMs and threat intelligence to detect phishing, social engineering, and malicious URLs in real-time.
-
-> 💡 **The Backstory:** 
-> This project was built for the republican cyber-security competition [**#КиберПраво** (#CyberLaw)](https://a1.by/ru/company/news/pri-podderzhke-a1-v-belarusi-zapustili-konkurs-kiberpravo-dlya-detej-i-podrostkov/p/kiberpravo). Due to a bureaucratic mess at the school level, my official application was lost, and the bot never reached the jury — stripping me of the chance to fight for the grand prize.
-> 
-> Instead of letting a production-ready Telegram bot sit in a private folder, I am releasing it to the world. This code is a personal statement by [egraich](https://github.com/egraich) as an independent developer. Use it, fork it, and build something better.
-
----
-
-## ⚙️ System Overview
-
-`CyberPravoBot` acts as an automated security filter for text messages and links. Instead of relying solely on static blacklists, the bot analyzes incoming text dynamically using LLMs to recognize fraudulent context, banking scams, and credential harvesting attempts.
-
-### Core Technical Features:
-* **Dynamic LLM Routing:** A backend router that allows real-time hot-swapping between three different model configurations via an administrator dashboard.
-* **Asynchronous Architecture:** Built on top of `aiogram` and `aiosqlite` to log interaction telemetry and handle database operations natively without blocking the primary event loop.
-* **VirusTotal API v3 Integration:** Automatically extracts and base64-encodes URLs to check them against global threat intelligence data, appending safety reports directly to the LLM prompt for precise analysis.
-* **Modular Codebase:** Strict separation of UI handlers, database logic, and system prompts with centralized management via `config.py`.
-
----
-
-## 📸 Demonstration
+An asynchronous Telegram bot that checks links and messages to protect users from phishing and scam messages.
 
 <p align="center">
   <a href="https://github.com/user-attachments/assets/3606ac11-001e-45e8-b746-acc80d5a2bcc">
@@ -31,40 +10,42 @@ An asynchronous Telegram bot powered by LLMs and threat intelligence to detect p
   </a>
 </p>
 
----
-
-## 🧠 Supported Model Configurations
-
-The routing layer connects to the Groq API infrastructure and dynamically selects system prompt presets depending on the selected model:
-
-1. **Llama 70B (Standard Mode) 🛡️**
-   * **Model ID:** `llama-3.3-70b-versatile`
-   * **Use Case:** Default threat assessment, general text classification, and pattern matching.
-
-2. **GPT Engine (Ultra Mode) 🧠**
-   * **Model ID:** `openai/gpt-oss-120b`
-   * **Use Case:** Deep contextual analysis, decoding suspicious strings (base64/hex), and advanced social engineering detection.
-
-3. **Llama 17B (Mass Mode) ⚡**
-   * **Model ID:** `meta-llama/llama-4-scout-17b-16e-instruct`
-   * **Use Case:** High-throughput, low-latency text scanning under heavy concurrent traffic.
+**[Try the Live Telegram Bot Here](https://t.me/cyberpravobot)**
 
 ---
 
-## 🛠️ Tech Stack
+## Features
 
-* **Core:** Python 3.10+
-* **Bot Framework:** Aiogram 3.x (Async Telegram Bot API)
-* **AI Integration:** Groq Async SDK
-* **Network:** aiohttp (Async HTTP client for VirusTotal API calls)
-* **Database:** aiosqlite (Asynchronous SQLite wrapper)
-* **Environment:** python-dotenv
+* **Phishing Detection:** The bot detects links in message and check it with Virus Total.
+* **Scam Recognition:** Uses AI to read chat messages and find scam context.
+* **Admin Panel:** Admin can change between 3 different AI models manually.
+* **Fast and Async:** It does not lag when many users send messages because it uses async functions.
 
 ---
 
-## 💻 Setup & Deployment
+## How it works
 
-1. **Clone the repository:**
+I chose **aiogram** and **aiosqlite** to make the bot completely asynchronous. This is important because API requests delay shouldn't freeze the main bot loop when checking links.
+
+For security checks, the bot takes a URL, converts it to base64, and sends it to the **VirusTotal**. After getting the answer, the bot appends this data directly into the **Groq LLM** prompt. This helps the AI make a very precise decision about whether the link is a scam or not.
+
+### Tech Stack:
+* Python 3.10+
+* Aiogram 3.x (Bot framework)
+* Groq SDK & aiohttp (For AI and VirusTotal API)
+* aiosqlite (Database)
+
+---
+
+## How to Run Locally
+
+### Requirements
+* Python 3.10 or higher
+* VirusTotal API Key and Groq API Key
+* All from requirements.txt ¯\_(ツ)_/¯
+
+### Setup Steps
+1. **Clone the project:**
    ```bash
    git clone https://github.com/egraich/CyberPravoBot
    cd CyberPravoBot
@@ -75,8 +56,8 @@ The routing layer connects to the Groq API infrastructure and dynamically select
    pip install -r requirements.txt
    ```
 
-3. **Configure Environment Variables:**
-   Create a `.env` file in the root directory:
+3. **Create Environment Variables:**
+   Create a `.env` file in the root folder and add your keys:
    ```env
    BOT_TOKEN=your_telegram_bot_token_here
    ADMIN_ID=your_numerical_telegram_user_id
@@ -89,22 +70,24 @@ The routing layer connects to the Groq API infrastructure and dynamically select
    python main.py
    ```
 
-> ℹ️ **Note on Deployment:** The `amvera.yml` file located in the root directory is a strictly technical configuration required for automated hosting deployment on the Amvera cloud infrastructure. If you are running the bot locally, you can safely ignore this file.
+>(Note: You can ignore `amvera.yml`. It is only used for cloud deployment on Amvera infrastructure).*
 
 ---
 
-## 📜 Open Source Licensing
+## The Backstory
 
-This project is open-source and distributed under the **MIT License**. 
-
-For details on usage permissions and liability limitations, please refer to the [LICENSE](LICENSE) file in the root directory.
+I originally built this bot for a big cyber-security competition in Belarus called [#КиберПраво(#CyberLaw)](https://a1.by/ru/company/news/pri-podderzhke-a1-v-belarusi-zapustili-konkurs-kiberpravo-dlya-detej-i-podrostkov/p/kiberpravo). But because of a bureaucratic mistake at my school, my official papers were lost, and my bot never reached the judges. I didn't want to delete a fully working project, so I polished the code and released it here for everyone.
 
 ---
 
-## 🤖 AI Usage
+## AI Disclosure
 
-This project uses AI as a development assistant. 
-- AI helped with code architecture, async templates, and debugging.
-- All final logic, integrations, and manual fixes (100+ commits) were done by me.
+As required by Stardance rules: 
+I used an LLM as a coding assistant to help me with boilerplate async templates, database design, and fast debugging. However, all the main logic, API integrations, prompt engineering, and over 100 manual bug fixes were done entirely by myself.
 
-Maintained with ❤️ by [egraich](https://github.com/egraich)
+---
+
+## License
+This project is open-source under the MIT License. 
+
+Made by [egraich](https://github.com/egraich)
