@@ -28,7 +28,7 @@ An asynchronous Telegram bot that checks links and messages to protect users fro
 
 * **Phishing Detection:** The bot detects links in message and checks it with Virus Total.
 * **Scam Recognition:** Uses AI to read chat messages and find scam context.
-* **Admin Panel:** Admin can change between 3 different AI models manually.
+* **Admin Panel:** Admin can change between 3 different AI models manually without turning off bot.
 * **Fast and Async:** It does not lag when many users send messages because it uses async functions.
 
 ---
