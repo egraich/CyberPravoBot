@@ -18,7 +18,7 @@ An asynchronous Telegram bot that checks links and messages to protect users fro
 
 * 1. Go to [Chat with bot in telegram](https://t.me/cyberpravobot)
 * 2. Press start(text `/start` if there is no button)
-* 3. Select analys mode(or skip it for standart mode)
+* 3. Select analysis mode(or skip it for standard mode)
 * 4. Forward to it some suspicious message
 * 5. enjoy risk-score in percents!
 
