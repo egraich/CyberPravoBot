@@ -17,16 +17,16 @@ An asynchronous Telegram bot that checks links and messages to protect users fro
 ## Quick start
 
 * 1. Go to [Chat with bot in telegram](https://t.me/cyberpravobot)
-* 2. Press start(text `/start` if there is no button)
+* 2. Press start (text `/start` if there is no button)
 * 3. Select analysis mode(or skip it for standard mode)
-* 4. Forward to it some suspicious message
-* 5. enjoy risk-score in percents!
+* 4. Forward some suspicious message to it
+* 5. Enjoy risk-score in percents!
 
 ---
 
 ## Features
 
-* **Phishing Detection:** The bot detects links in message and check it with Virus Total.
+* **Phishing Detection:** The bot detects links in message and checks it with Virus Total.
 * **Scam Recognition:** Uses AI to read chat messages and find scam context.
 * **Admin Panel:** Admin can change between 3 different AI models manually.
 * **Fast and Async:** It does not lag when many users send messages because it uses async functions.
@@ -92,7 +92,7 @@ I originally built this bot for a big cyber-security competition in Belarus call
 
 ## AI Usage
 
-I used an gemini as a coding assistant to help me learn async programming and base rules of PEP 8 coding.
+I used a gemini as a coding assistant to help me learn async programming and base rules of PEP 8 coding.
 
 ---
 
