@@ -4,6 +4,7 @@
 
 An asynchronous Telegram bot that checks links and messages to protect users from phishing and scam messages.
 
+_click the preview below to watch video demonstration_
 <p align="center">
   <a href="https://github.com/user-attachments/assets/3606ac11-001e-45e8-b746-acc80d5a2bcc">
     <img width="1920" height="1080" alt="preview" src="https://github.com/user-attachments/assets/276dc486-61d3-40a4-8e70-aa92b058f8d8" />
