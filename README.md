@@ -33,6 +33,12 @@ An asynchronous Telegram bot that checks links and messages to protect users fro
 
 ---
 
+## Localization 
+
+Because this bot was made for a Belarusian competition, the whole UI is in Russian, but you can easily localize the UI to your own language in the `config.py` file.
+
+---
+
 ## How it works
 
 I chose **aiogram** and **aiosqlite** to make the bot completely asynchronous. This is important because API requests delay shouldn't freeze the main bot loop when checking links.
@@ -93,12 +99,6 @@ I originally built this bot for a big cyber-security competition in Belarus call
 ## AI Usage
 
 I used a gemini as a coding assistant to help me learn async programming and base rules of PEP 8 coding.
-
----
-
-## Localization 
-
-Because this bot was made for a Belarusian competition, the whole UI is in Russian, but you can easily localize the UI to your own language in the `config.py` file.
 
 ---
 
