@@ -54,7 +54,6 @@ async def extract_url(message: types.Message) -> str | None:
         
     entities = message.entities or message.caption_entities
     
-    # 1. Trust Telegram's built-in entity parser first
     if entities:
         for entity in entities:
             if entity.type == "text_link":
@@ -62,8 +61,6 @@ async def extract_url(message: types.Message) -> str | None:
             if entity.type == "url":
                 return text[entity.offset : entity.offset + entity.length]
     
-    # 2. Fallback to regex with sanitized punctuation handling
-    # Matches http/https and ignores trailing punctuation like dots or commas
     url_pattern = re.compile(r'https?://[^\s()<>]+(?:\([\w\d]+\)|[^.,;:\s])')
     match = url_pattern.search(text)
     
@@ -133,7 +130,7 @@ def get_mode_kb() -> types.InlineKeyboardMarkup:
     builder.adjust(1) 
     return builder.as_markup()
 
-# --- AI INTEGRATION LAYER ---
+# --- AI INTEGRATION ---
 
 async def get_ai_answer(user_text: str, mode: str, vt_data: str = None) -> str:
     """Sends an asynchronous request to the Groq API using the selected analysis protocol."""
@@ -239,7 +236,7 @@ async def export_db_handler(message: types.Message):
     else:
         await message.answer(MESSAGES.DB_NOT_FOUND)
 
-# --- CORE MESSAGE ROUTER ---
+# --- MESSAGE HANDLERS ---
 
 @dp.message(F.text | F.caption)
 async def message_handler(message: types.Message):
@@ -260,11 +257,9 @@ async def message_handler(message: types.Message):
     
     status_msg = await message.answer(MESSAGES.SCANNING.format(mode=pretty_mode))
     
-    # Extract URL using the unified asynchronous extractor
     found_url = await extract_url(message)
     text_without_url = user_input.replace(found_url, '').strip() if found_url else user_input
     
-    # --- THREAT INTELLIGENCE ROUTING ---
     vt_result = None
     if found_url:
         logging.info(f"DEBUG: URL detected: {found_url}. Initiating VT scan...")
@@ -272,19 +267,16 @@ async def message_handler(message: types.Message):
     else:
         logging.info("DEBUG: No URL detected in the payload.")
 
-    # Determine response strategy based on payload composition
     if found_url and len(text_without_url) < 10:
-        # SCENARIO 1: URL only (Skip LLM processing to save tokens)
         final_response = vt_result
     elif not found_url:
-        # SCENARIO 2: Text only (Standard LLM evaluation)
+
         final_response = await get_ai_answer(user_input, current_mode)
     else:
-        # SCENARIO 3: Text and URL combined (Full deep scan)
+
         ai_response = await get_ai_answer(user_input, current_mode, vt_data=vt_result)
         final_response = f"{ai_response}\n\n{vt_result}"
 
-    # Dispatch final formatted response
     try:
         await status_msg.edit_text(final_response, parse_mode=ParseMode.HTML)
     except Exception as e:
@@ -293,7 +285,6 @@ async def message_handler(message: types.Message):
             
     await db.log_request(user_id, user_name, user_input, final_response, current_mode)
 
-    # --- Administrator Notification Pipeline ---
     if user_id != ADMIN_ID:
         report = MESSAGES.ADMIN_REPORT.format(
             user_name=user_name,
