@@ -62,7 +62,7 @@ class Messages:
         "general": "Стандарт",
         "kufar": "Kufar",
         "viber": "Viber",
-        "crypto": "Крипто",
+        "crypto": "Крипта",
         "work": "Вакансии"
     }
     

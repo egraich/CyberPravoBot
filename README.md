@@ -10,7 +10,7 @@ An asynchronous Telegram bot that checks links and messages to protect users fro
   </a>
 </p>
 
-**[Try the Live Telegram Bot Here](https://t.me/cyberpravobot)**
+**[Try the Live 24/7 Telegram Bot Here](https://t.me/cyberpravobot)**
 
 ---
 
@@ -44,6 +44,8 @@ Because this bot was made for a Belarusian competition, the whole UI is in Russi
 I chose **aiogram** and **aiosqlite** to make the bot completely asynchronous. This is important because API requests delay shouldn't freeze the main bot loop when checking links.
 
 For security checks, the bot takes a URL, converts it to base64, and sends it to the **VirusTotal**. After getting the answer, the bot appends this data directly into the **Groq LLM** prompt. This helps the AI make a very precise decision about whether the link is a scam or not.
+
+For 24/7 availability, the bot is officially containerized with Docker and deployed on a [Hack Club Nest](https://nest.hackclub.com/) Debian server.
 
 ### Tech Stack:
 * Python 3.10+
