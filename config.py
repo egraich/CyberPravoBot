@@ -1,4 +1,35 @@
-# --- CONFIGURATION CLASSES ---
+# Copyright (c) 2026 egraich
+
+class LogMessages:
+    """English log messages for server/container console"""
+    STARTUP = "Starting CyberShield bot..."
+    SHUTDOWN = "Bot session closed."
+    DB_INIT_OK = "Database initialized successfully at {path}."
+    DB_ERROR = "Database operation failed during '{action}': {err}"
+    DB_LOG_SAVED = "Scan results saved to database for user_id={user_id}."
+    
+    URL_EXTRACTED = "Extracted URL from message: {url}"
+    URL_NONE = "No valid URL found in message."
+    
+    VT_REQ_START = "Initiating VirusTotal scan for URL ID: {url_id}"
+    VT_SUCCESS = "VirusTotal scan completed. Malicious score: {malicious}/{total}"
+    VT_NOT_FOUND = "VirusTotal: URL not found in database (404)."
+    VT_API_ERR = "VirusTotal API returned error code: {status}"
+    VT_EXCEPTION = "VirusTotal connection/timeout exception: {err}"
+    
+    AI_REQ_START = "Requesting AI completion. Model: {model}, Mode: {mode}"
+    AI_SUCCESS = "AI generation successful. Response length: {length} chars."
+    AI_ERROR = "AI API Exception: {err}"
+    
+    CMD_START = "User {user_id} initiated /start command."
+    CMD_MODE_CHG = "User {user_id} changed scanning mode to: {mode}"
+    
+    ADMIN_PANEL = "Admin panel accessed by {user_id}."
+    ADMIN_MDL_CHG = "Admin changed active AI model to: {model}"
+    ADMIN_DB_EXP = "Admin requested database export."
+    
+    MSG_PROCESSING = "Processing message from {user_id}. Length: {length} chars."
+    MSG_REPLY_ERR = "Failed to send/edit message for user {user_id}: {err}"
 
 class Settings:
     MOD_L70 = "llama-3.3-70b-versatile"
@@ -11,9 +42,10 @@ class Settings:
     BTN_EXPORT = "📥 Выгрузить базу данных"
     BTN_HIDE = "❌ Скрыть панель"
 
+    DB_PATH = "./data/cyber_shield.db"
+    START_PHOTO_ID = "AgACAgIAAxkBAAIIVWoAAdBfCBRzpozezoFosa8YXrIwbgACRhhrG4QQCEgGn5dtYsTd0gEAAwIAA3kAAzsE"
 
 class Messages:
-    # --- INTERFACE MESSAGES ---
     START = """<b>🛡 КиберЩит #КиберПраво 2026</b>
 <i>Твой личный ИИ-защитник против мошенников в Беларуси</i>
 
@@ -27,53 +59,50 @@ class Messages:
 Выбери режим сканирования ниже или отправь подозрительную ссылку для анализа."""
 
     MODE_NAMES = {
-        "general": "🛡 Стандарт",
-        "kufar": "🛒 Kufar",
-        "viber": "📞 Viber",
-        "crypto": "💎 Крипто",
-        "work": "💼 Вакансии"
+        "general": "Стандарт",
+        "kufar": "Kufar",
+        "viber": "Viber",
+        "crypto": "Крипто",
+        "work": "Вакансии"
     }
     
-    MODE_CHANGED = "✅ Режим анализа изменен на: <b>{mode}</b>\n\nПришлите подозрительный текст или перешлите сообщение."
-    SCANNING = "[{mode}] Выполняю сканирование..."
+    MODE_CHANGED = "Режим анализа изменен на: <b>{mode}</b>\n\nОжидаю данные для проверки."
+    SCANNING = "[{mode}] Анализирую..."
     
-    # --- Admin Messages ---
-    ADMIN_OPEN = "🔧 Панель управления активирована.\nТекущая модель: {model}"
-    ADMIN_HIDE = "Панель скрыта. Бот работает в штатном режиме."
-    MODEL_SET = "✅ Установлена модель: {model}"
-    DB_NOT_FOUND = "Файл базы данных не найден."
-    DB_CAPTION = "Актуальный дамп базы данных CyberShield 🛡"
+    ADMIN_OPEN = "Панель управления активирована. Текущая модель: {model}"
+    ADMIN_HIDE = "Панель скрыта."
+    MODEL_SET = "Установлена модель: {model}"
+    DB_NOT_FOUND = "База данных не найдена."
+    DB_CAPTION = "Дамп БД"
     
     ADMIN_REPORT = (
         "🔔 <b>Пользователь:</b> <code>{user_name}</code>\n"
         "⚙️ <b>Режим:</b> {mode}\n"
         "🔗 <b>URL найден:</b> {has_url}\n"
         "📥 <b>Сообщение:</b>\n<code>{text}</code>\n"
-        "———————————————\n"
+        "—\n"
         "🛡 <b>Ответ бота:</b>\n{response}"
     )
 
-    # --- TEXTS FOR VIRUS TOTAL ---
-    VT_NO_KEY = "<em>⚠️ Ошибка: Ключ VirusTotal не найден в системе.</em>\n"
-    VT_THREAT = "🚨 <b>VirusTotal: {malicious}/{total}</b> антивирусов нашли угрозу!"
-    VT_CLEAN = "✅ <b>VirusTotal:</b> Ссылка Безопасна (0/{total})."
-    VT_NOT_FOUND = "⚠️ <b>VirusTotal:</b> Этой ссылки еще нет в базе. Будьте осторожны."
-    VT_ERROR = "⚠️ <b>VirusTotal:</b> Ошибка сервера ({code})"
+    VT_NO_KEY = "Ошибка: ключ VirusTotal не настроен.\n"
+    VT_THREAT = "<b>VirusTotal: {malicious}/{total}</b> антивирусов нашли угрозу!"
+    VT_CLEAN = "<b>VirusTotal:</b> Ссылка Безопасна (0/{total})."
+    VT_NOT_FOUND = "<b>VirusTotal:</b> Этой ссылки еще нет в базе. Будьте осторожны."
+    VT_ERROR = "<b>VirusTotal:</b> ошибка сервера ({code})"
     
-    # --- ADVANCED ERROR STATUSES FOR VT AND AI ---
-    VT_AUTH_ERROR = "⚠️ <b>VirusTotal:</b> Ошибка авторизации. Проверьте правильность API ключа."
-    VT_RATE_LIMIT = "⚠️ <b>VirusTotal:</b> Лимит запросов (4/мин) исчерпан."
-    VT_TIMEOUT = "⚠️ <b>VirusTotal:</b> Превышено время ожидания ответа. Попробуйте позже."
-    VT_CONNECTION_ERROR = "⚠️ <b>VirusTotal:</b> Ошибка соединения (DNS или сеть)."
-    VT_UNEXPECTED_ERROR = "⚠️ <b>VirusTotal:</b> Непредвиденная ошибка: {error}"
-    AI_ERROR = "Ошибка ИИ-анализа: {error}"
+    VT_AUTH_ERROR = "<b>VirusTotal:</b> Ошибка авторизации API."
+    VT_RATE_LIMIT = "<b>VirusTotal:</b> Превышен лимит запросов."
+    VT_TIMEOUT = "<b>VirusTotal:</b> Таймаут соединения."
+    VT_CONNECTION_ERROR = "<b>VirusTotal:</b> Cетевая ошибка."
+    VT_UNEXPECTED_ERROR = "<b>VirusTotal:</b> Непредвиденная ошибка: {error}"
+    AI_ERROR = "Ошибка генерации: {error}"
     
     VT_SYSTEM_PROMPT = "Внимание! Встроенный модуль VirusTotal проверил ссылку из сообщения и сообщает: {vt_data}. Обязательно учти эту информацию при вынесении вердикта и составлении прогноза рисков."
 
+LOG_MSGS = LogMessages()
 SETTINGS = Settings()
 MESSAGES = Messages()
 
-# --- AI PROMPTS ---
 BASE_RULES = r"""
 Role: Эшелонированная интеллектуальная система предиктивной верификации и многофакторного когнитивного аудита цифровых угроз.
 Architecture: Аналитическое ядро с динамической подкачкой модульных контекстных библиотек.
