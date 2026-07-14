@@ -190,7 +190,7 @@ async def admin_panel(message: types.Message):
     logger.info(LOG_MSGS.ADMIN_PANEL.format(user_id=message.from_user.id))
     kb = [
         [KeyboardButton(text=SETTINGS.BTN_70B)],
-        [KeyboardButton(text=SETTINGS.BTN_120B)],
+        [KeyboardButton(text=SETTINGS.BTN_QCM)],
         [KeyboardButton(text=SETTINGS.BTN_17B)],
         [KeyboardButton(text=SETTINGS.BTN_EXPORT)],
         [KeyboardButton(text=SETTINGS.BTN_HIDE)]
@@ -200,13 +200,13 @@ async def admin_panel(message: types.Message):
         reply_markup=ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True)
     )
 
-@dp.message(F.from_user.id == ADMIN_ID, F.text.in_({SETTINGS.BTN_70B, SETTINGS.BTN_120B, SETTINGS.BTN_17B}))
+@dp.message(F.from_user.id == ADMIN_ID, F.text.in_({SETTINGS.BTN_70B, SETTINGS.BTN_QCM, SETTINGS.BTN_17B}))
 async def change_model(message: types.Message):
     """Hot-swap active LLM"""
     if message.text == SETTINGS.BTN_70B:
         states["current_model"] = SETTINGS.MOD_L70
-    elif message.text == SETTINGS.BTN_120B:
-        states["current_model"] = SETTINGS.MOD_G120
+    elif message.text == SETTINGS.BTN_QCM:
+        states["current_model"] = SETTINGS.MOD_QCM
     else:
         states["current_model"] = SETTINGS.MOD_L17
         
@@ -247,8 +247,13 @@ async def message_handler(message: types.Message):
     vt_result = None
     if found_url:
         vt_result = await scan_url_virustotal(found_url)
-        ai_response = await get_ai_answer(user_input, current_mode, vt_data=vt_result)
-        final_response = f"{ai_response}\n\n{vt_result}"
+        text_without_url = user_input.replace(found_url, "").strip()
+        
+        if text_without_url: 
+            ai_response = await get_ai_answer(user_input, current_mode, vt_data=vt_result)
+            final_response = f"{ai_response}\n\n{vt_result}"
+        else:
+            final_response = vt_result
     else:
         final_response = await get_ai_answer(user_input, current_mode)
 

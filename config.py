@@ -33,11 +33,11 @@ class LogMessages:
 
 class Settings:
     MOD_L70 = "llama-3.3-70b-versatile"
-    MOD_G120 = "openai/gpt-oss-120b"
+    MOD_QCM = "groq/compound-mini"
     MOD_L17 = "meta-llama/llama-4-scout-17b-16e-instruct"
 
     BTN_70B = "🛡 Модель: Llama 70B (Стандарт)"
-    BTN_120B = "🧠 Модель: GPT 120B (Ультра)"
+    BTN_QCM = "🧠 Модель: Groq 27B (Ультра)"
     BTN_17B = "⚡ Модель: Llama 17B (Массовая)"
     BTN_EXPORT = "📥 Выгрузить базу данных"
     BTN_HIDE = "❌ Скрыть панель"
