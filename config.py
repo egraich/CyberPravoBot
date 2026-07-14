@@ -42,7 +42,7 @@ class Settings:
     BTN_EXPORT = "📥 Выгрузить базу данных"
     BTN_HIDE = "❌ Скрыть панель"
 
-    DB_PATH = "./data/cyber_shield.db"
+    DB_PATH = "cyber_shield.db"
     START_PHOTO_ID = "AgACAgIAAxkBAAIIVWoAAdBfCBRzpozezoFosa8YXrIwbgACRhhrG4QQCEgGn5dtYsTd0gEAAwIAA3kAAzsE"
 
 class Messages:
