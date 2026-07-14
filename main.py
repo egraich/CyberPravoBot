@@ -28,7 +28,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger("CyberShieldBot")
 
-load_dotenv()
+load_dotenv(override=False)
 ADMIN_ID = int(os.getenv("ADMIN_ID", 0))
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 BOT_TOKEN = os.getenv("BOT_TOKEN")
