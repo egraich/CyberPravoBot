@@ -98,6 +98,43 @@ I originally built this bot for a big cyber-security competition in Belarus call
 
 ## Deployment
 
+This project is fully containerized and optimized for rapid production deployment using Docker and Docker Compose. Follow the steps below to deploy the bot on your remote Linux server:
+
+### Prerequisites
+Ensure your server has Docker and Docker Compose installed.
+
+### Installation Steps
+
+1. **Navigate to your workspace directory:**
+   ```bash
+   cd /path/to/your/projects
+   ```
+
+2. **Clone the repository:**
+   ```bash
+   git clone https://github.com/egraich/CyberPravobot
+   ```
+
+3. **Restructure directories for database persistence and isolation:**
+   ```bash
+   mv CyberPravoBot src
+   ```
+
+4. **Configure Environment Variables:**
+   Create and fill a `.env` file **outside** the `src/` directory to protect your credentials:
+   ```bash
+   nano .env
+   ```
+   *Paste your keys as described in the local configuration section.*
+
+5. **Launch the Container:**
+   Navigate into the code directory and boot up the microservice:
+   ```bash
+   cd src
+   docker compose up -d --build
+   ```
+   >(Note: Use `docker-compose up -d --build` if your server uses Docker Compose v1).
+
 ---
 
 ## AI Usage
