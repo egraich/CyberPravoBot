@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  pravobot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pravobot
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    volumes:
+      - ../cyber_shield.db:/app/cyber_shield.db
