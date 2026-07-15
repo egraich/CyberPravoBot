@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   pravobot:
     build:
@@ -11,3 +9,8 @@ services:
       - ../.env
     volumes:
       - ../cyber_shield.db:/app/cyber_shield.db
+    networks:
+      - pravonet
+
+networks:
+  pravonet:
