@@ -90,12 +90,6 @@ For 24/7 availability, the bot is officially containerized with Docker and deplo
 
 ---
 
-## The Backstory
-
-I originally built this bot for a big cyber-security competition in Belarus called [#КиберПраво(#CyberLaw)](https://a1.by/ru/company/news/pri-podderzhke-a1-v-belarusi-zapustili-konkurs-kiberpravo-dlya-detej-i-podrostkov/p/kiberpravo). But because of a bureaucratic mistake at my school, my official papers were lost, and my bot never reached the judges. I didn't want to delete a fully working project, so I polished the code and released it here for everyone.
-
----
-
 ## Deployment
 
 This project is fully containerized and optimized for rapid production deployment using Docker and Docker Compose. Follow the steps below to deploy the bot on your remote Linux server:
@@ -134,6 +128,12 @@ Ensure your server has Docker and Docker Compose installed.
    docker compose up -d --build
    ```
    >(Note: Use `docker-compose up -d --build` if your server uses Docker Compose v1).
+
+---
+
+## The Backstory
+
+I originally built this bot for a big cyber-security competition in Belarus called [#КиберПраво(#CyberLaw)](https://a1.by/ru/company/news/pri-podderzhke-a1-v-belarusi-zapustili-konkurs-kiberpravo-dlya-detej-i-podrostkov/p/kiberpravo). But because of a bureaucratic mistake at my school, my official papers were lost, and my bot never reached the judges. I didn't want to delete a fully working project, so I polished the code and released it here for everyone.
 
 ---
 
