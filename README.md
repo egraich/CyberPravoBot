@@ -96,6 +96,10 @@ I originally built this bot for a big cyber-security competition in Belarus call
 
 ---
 
+## Deployment
+
+---
+
 ## AI Usage
 
 I used a gemini as a coding assistant to help me learn async programming and base rules of PEP 8 coding.
