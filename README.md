@@ -122,7 +122,7 @@ Ensure your server has Docker and Docker Compose installed.
    *Paste your keys as described in the local configuration section.*
 
 5. **Launch the Container:**
-   Navigate into the code directory and boot up the microservice:
+   Navigate into the code directory and boot up the application:
    ```bash
    cd src
    docker compose up -d --build
