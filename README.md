@@ -92,7 +92,7 @@ For 24/7 availability, the bot is containerized with Docker and deployed on a [H
 
 ## Deployment
 
-This project is fully containerized and optimized for rapid production deployment using Docker and Docker Compose. Follow the steps below to deploy the bot on your remote Linux server:
+If you want to host this bot on your own Linux server, you can set it up with Docker Compose by instructions below:
 
 ### Prerequisites
 Ensure your server has Docker and Docker Compose installed.
