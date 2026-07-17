@@ -109,7 +109,7 @@ Ensure your server has Docker and Docker Compose installed.
    git clone https://github.com/egraich/CyberPravoBot
    ```
 
-3. **Restructure directories for database persistence and isolation:**
+3. **Rename repository for database isolation:**
    ```bash
    mv CyberPravoBot src
    ```
