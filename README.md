@@ -2,7 +2,7 @@
 
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue?style=flat-square&logo=python&logoColor=white) &nbsp; ![Aiogram](https://img.shields.io/badge/framework-aiogram_3.x-green?style=flat-square&logo=telegram&logoColor=white) &nbsp; ![License](https://img.shields.io/badge/license-MIT-red?style=flat-square)
 
-An asynchronous Telegram bot that checks links and messages to protect users from phishing and scam messages.
+An asynchronous Telegram bot that checks links and messages to protect users from scam messages.
 
 <p align="center">
   <a href="https://github.com/user-attachments/assets/3606ac11-001e-45e8-b746-acc80d5a2bcc">
@@ -16,26 +16,26 @@ An asynchronous Telegram bot that checks links and messages to protect users fro
 
 ## Quick start
 
-* 1. Go to [Chat with bot in telegram](https://t.me/cyberpravobot)
-* 2. Press start (text `/start` if there is no button)
-* 3. Select analysis mode (or skip it for standard mode)
-* 4. Forward some suspicious message to it
-* 5. Enjoy the risk score as a percentage!
+1. Go to [Chat with bot in telegram](https://t.me/cyberpravobot)
+2. Press start (type `/start` if there is no button)
+3. Select analysis mode (or skip it for standard mode)
+4. Forward some suspicious message to it
+5. Enjoy the risk score as a percentage!
 
 ---
 
 ## Features
 
-* **Phishing Detection:** The bot detects links in messages and checks them with VirusTotal.
-* **Scam Recognition:** Uses AI to read chat messages and find scam context.
-* **Admin Panel:** Admin can change between 3 different AI models manually without turning off bot.
-* **Fast and Async:** It does not lag when many users send messages because it uses async functions.
+* **Phishing Detection:** The bot detects links in messages and checks them via VirusTotal.
+* **Scam Recognition:** Uses AI to read chat messages and catch scam context.
+* **Admin Panel:** You can switch between 3 different AI models on the fly without turning off the bot.
+* **Fast and Async:** Built to handle high load without lags by using async functions.
 
 ---
 
 ## Localization 
 
-Because this bot was made for a Belarusian competition, the whole UI is in Russian, but you can easily localize the UI to your own language in the `config.py` file.
+Because this bot was originally made for a Belarusian competition, the default UI is in Russian. However, you can easily localize everything to your own language right inside the `config.py` file.
 
 ---
 
@@ -43,9 +43,9 @@ Because this bot was made for a Belarusian competition, the whole UI is in Russi
 
 I chose **aiogram** and **aiosqlite** to make the bot completely asynchronous. This is important because API requests delay shouldn't freeze the main bot loop when checking links.
 
-For security checks, the bot takes a URL, converts it to base64, and sends it to the **VirusTotal**. After getting the answer, the bot appends this data directly into the **Groq LLM** prompt. This helps the AI make a very precise decision about whether the link is a scam or not.
+For security checks, the bot takes a URL, converts it to base64, and sends it to **VirusTotal**. After getting the answer, the bot appends this data directly into the **Groq LLM** prompt. This helps the AI make a very precise decision about whether the link is a scam or not.
 
-For 24/7 availability, the bot is officially containerized with Docker and deployed on a [Hack Club Nest](https://nest.hackclub.com/) Debian server.
+For 24/7 availability, the bot is containerized with Docker and deployed on a [Hack Club Nest](https://nest.hackclub.com/) Debian server.
 
 ### Tech Stack:
 * Python 3.10+
@@ -106,7 +106,7 @@ Ensure your server has Docker and Docker Compose installed.
 
 2. **Clone the repository:**
    ```bash
-   git clone https://github.com/egraich/CyberPravobot
+   git clone https://github.com/egraich/CyberPravoBot
    ```
 
 3. **Restructure directories for database persistence and isolation:**
@@ -139,11 +139,11 @@ I originally built this bot for a big cyber-security competition in Belarus call
 
 ## AI Usage
 
-I used a gemini as a coding assistant to help me learn async programming and base rules of PEP 8 coding.
+I used Gemini as a coding assistant to help me learn async programming and the base rules of PEP 8.
 
 ---
 
 ## License
-This project is open-source under the MIT License in LICENSE file. 
+This project is open-source under the MIT License. 
 
 Made by [egraich](https://github.com/egraich)
