@@ -146,4 +146,4 @@ I used Gemini as a coding assistant to help me learn async programming and the b
 ## License
 This project is open-source under the MIT License. 
 
-Made by [egraich](https://github.com/egraich)
+Made by [egraich](https://egraich.dev)
