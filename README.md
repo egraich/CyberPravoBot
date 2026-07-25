@@ -137,12 +137,6 @@ I originally built this bot for a big cyber-security competition in Belarus call
 
 ---
 
-## AI Usage
-
-I used Gemini as a coding assistant to help me learn async programming and the base rules of PEP 8.
-
----
-
 ## License
 This project is open-source under the MIT License. 
 
