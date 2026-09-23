@@ -32,9 +32,9 @@ class LogMessages:
     MSG_REPLY_ERR = "Failed to send/edit message for user {user_id}: {err}"
 
 class Settings:
-    MOD_L70 = "llama-3.3-70b-versatile"
+    MOD_L70 = "openai/gpt-oss-120b"
     MOD_QCM = "groq/compound-mini"
-    MOD_L17 = "meta-llama/llama-4-scout-17b-16e-instruct"
+    MOD_L17 = "openai/gpt-oss-20b"
 
     BTN_70B = "🛡 Модель: Llama 70B (Стандарт)"
     BTN_QCM = "🧠 Модель: Groq 27B (Ультра)"
