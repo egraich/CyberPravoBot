@@ -90,47 +90,6 @@ For 24/7 availability, the bot is containerized with Docker and deployed on a [H
 
 ---
 
-## Deployment
-
-If you want to host this bot on your own Linux server, you can set it up with Docker Compose by instructions below:
-
-### Prerequisites
-Ensure your server has Docker and Docker Compose installed.
-
-### Installation Steps
-
-1. **Navigate to your workspace directory:**
-   ```bash
-   cd /path/to/your/projects
-   ```
-
-2. **Clone the repository:**
-   ```bash
-   git clone https://github.com/egraich/CyberPravoBot
-   ```
-
-3. **Rename repository for database isolation:**
-   ```bash
-   mv CyberPravoBot src
-   ```
-
-4. **Configure Environment Variables:**
-   Create and fill a `.env` file **outside** the `src/` directory to protect your credentials:
-   ```bash
-   nano .env
-   ```
-   *Paste your keys as described in the local configuration section.*
-
-5. **Launch the Container:**
-   Navigate into the code directory and boot up the application:
-   ```bash
-   cd src
-   docker compose up -d --build
-   ```
-   >(Note: Use `docker-compose up -d --build` if your server uses Docker Compose v1).
-
----
-
 ## The Backstory
 
 I originally built this bot for a big cyber-security competition in Belarus called [#КиберПраво(#CyberLaw)](https://a1.by/ru/company/news/pri-podderzhke-a1-v-belarusi-zapustili-konkurs-kiberpravo-dlya-detej-i-podrostkov/p/kiberpravo). But because of a bureaucratic mistake at my school, my official papers were lost, and my bot never reached the judges. I didn't want to delete a fully working project, so I polished the code and released it here for everyone.
